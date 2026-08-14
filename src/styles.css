@@ -1,0 +1,201 @@
+/* You can add global styles to this file, and also import other style files */
+@import 'ngx-toastr/toastr';
+
+/* Global Variables */
+:root {
+  --primary-color: #0A1F2E;   /* Azul escuro mais forte para melhor contraste */
+  --secondary-color: #1E4A5F;  /* Azul médio */
+  --accent-color: #22C55E;     /* Verde mais vibrante e acessível */
+  --accent-hover: #16A34A;     /* Verde escuro para hover */
+  --background-color: #F8FAFC;  /* Fundo mais claro */
+  --surface-color: #FFFFFF;     /* Branco para cards/seções */
+  --font-stack: 'Poppins';
+  --text-color: #0F172A;        /* Texto mais escuro para melhor contraste WCAG AAA */
+  --text-secondary: #475569;    /* Texto secundário com melhor legibilidade */
+  --border-color: #E2E8F0;      /* Bordas mais suaves */
+  --border-hover: #CBD5E1;      /* Bordas no hover */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --hero-bg: linear-gradient(135deg, #0A1F2E 0%, #1E4A5F 50%, #2D5A6F 100%);
+  
+  /* Focus and interaction colors - Melhorados para acessibilidade */
+  --focus-color: #22C55E;
+  --focus-ring: 0 0 0 3px rgba(34, 197, 94, 0.3);
+  --hover-bg: rgba(34, 197, 94, 0.08);
+  --active-bg: rgba(34, 197, 94, 0.15);
+  
+  /* Transition timing */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+/* Global Reset */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base HTML e Body */
+html {
+  font-size: 12.8px; /* 80% de 16px = 12.8px para reduzir todo o site */
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-stack), 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  font-weight: 400;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Garantir que o Angular root seja responsivo */
+app-root {
+  display: block;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Imagens responsivas por padrão */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Focus styles para acessibilidade aprimorada */
+*:focus {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+  transition: outline-offset var(--transition-fast);
+}
+
+*:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+  box-shadow: var(--focus-ring);
+}
+
+/* Remove outline para mouse users, mantém para keyboard users */
+.js-focus-visible *:focus:not(.focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Text selection styling */
+::selection {
+  background-color: var(--active-bg);
+  color: var(--primary-color);
+}
+
+/* Melhor feedback visual em botões e links */
+button, a, [role="button"] {
+  position: relative;
+  transition: all var(--transition-base);
+}
+
+button:hover, a:hover, [role="button"]:hover {
+  transform: translateY(-1px);
+}
+
+button:active, a:active, [role="button"]:active {
+  transform: translateY(0);
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Responsividade básica para containers */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 2rem;
+  }
+}
+
+/* Utilitários responsivos */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Melhorias para performance em mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+button, a {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Melhorias para acessibilidade */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Otimizações para telas de alta densidade */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Ajustes específicos para retina displays */
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* Viewport meta configurado para responsividade */
+@-webkit-viewport { width: device-width; }
+@-moz-viewport { width: device-width; }
+@-ms-viewport { width: device-width; }
+@-o-viewport { width: device-width; }
+@viewport { width: device-width; }
+
+
+

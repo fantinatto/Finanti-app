@@ -1,0 +1,565 @@
+{
+  "HEADER": {
+    "LOGO": "Finanti",
+    "NAV": {
+      "HOME": "Home",
+      "CV": "Profile",
+      "LABS": "Prototypes",
+      "MEDALS": "Medals",
+      "BASTIDORES": "Behind the Scenes"
+    }
+  },
+  "NAV": {
+    "HOME": "Home",
+    "CV": "Profile",
+    "LABS": "Prototypes",
+    "LOGIN": "Login",
+    "SIGNUP": "Sign Up"
+  },
+  "HOME": {
+    "PROFILE_NAME": "Vinícius Fantinatto",
+    "PROFILE_ROLE": "Full Stack Developer",
+    "INTRO_TEXT": "I transform ideas into functional digital products. Specialized in Angular, Node.js and modern architectures.",
+    "STATS": {
+      "EXPERIENCE": "Years of Experience",
+      "PROJECTS": "Projects Completed", 
+      "LABS": "Active Prototypes",
+      "TECHNOLOGIES": "Technologies"
+    },
+    "BUTTONS": {
+      "VIEW_CV": "View Resume",
+      "EXPLORE_LABS": "Explore Prototypes"
+    },
+    "HERO": {
+      "WELCOME": "Hello, I'm",
+      "TITLE": "Vinícius Fantinatto",
+      "SUBTITLE": "Full Stack Developer & SAP Specialist",
+      "DESCRIPTION": "I help companies transform complex systems into stable, well-documented digital solutions that are easy to evolve.",
+      "ACTIONS": {
+        "VIEW_CV": "View resume",
+        "PORTFOLIO": "View prototypes",
+        "BASTIDORES": "View behind scenes",
+        "CONTACT": "Get in touch"
+      },
+      "HINT": "Scroll to see some prototypes and behind-the-scenes that show how I work in practice.",
+      "STATS": {
+        "EXPERIENCE": "11+ Years",
+        "EXPERIENCE_LABEL": "of experience",
+        "PROJECTS": "300+",
+        "PROJECTS_LABEL": "projects completed",
+        "SATISFACTION": "98%",
+        "SATISFACTION_LABEL": "client satisfaction",
+        "EXPERT_SKILLS_LABEL": "Expert Skills"
+      }
+    },
+    "LANDING": {
+      "HERO": {
+        "KICKER": "Simple planning, smart execution",
+        "TITLE": "Organize your daily work and gain clarity on what really matters.",
+        "DESCRIPTION": "From personal tracking to team workflows, centralize tasks, time entries, and deliveries in one easy-to-use experience.",
+        "EMAIL_PLACEHOLDER": "Enter your email",
+        "CTA": "Create your account",
+        "EMAIL_HINT": "No credit card required. Sign up in seconds and start on the free plan.",
+        "VIDEO_TITLE": "Quick demo (coming soon)",
+        "VIDEO_DESCRIPTION": "This area is ready for a future video showing how the platform works step by step.",
+        "MOCKUP_ALT": "Main product screen preview"
+      },
+      "HOW_IT_WORKS": {
+        "TITLE": "See how the app works in practice",
+        "SUBTITLE": "A simple flow to organize tasks, log hours, and track outcomes without spreading work across multiple tools.",
+        "STEP_1": {
+          "TITLE": "Organize deliveries in a visual board",
+          "DESCRIPTION": "Create cards, prioritize tasks, and track progress on ongoing work.",
+          "ALT": "Task board organized by status"
+        },
+        "STEP_2": {
+          "TITLE": "Log hours with context",
+          "DESCRIPTION": "Track hours by company and project with a clear daily calendar view.",
+          "ALT": "Time tracking screen with calendar"
+        },
+        "STEP_3": {
+          "TITLE": "Turn data into decisions",
+          "DESCRIPTION": "Use daily summaries and indicators to fine-tune your pace and productivity.",
+          "ALT": "Daily summary with productivity indicators"
+        }
+      }
+    },
+    "EXPLORE": {
+      "TITLE": "Explore what I do",
+      "SUBTITLE": "Technical prototypes and behind-the-scenes that tell the story behind the projects.",
+      "VIEW_ALL_LABS": "View all prototypes",
+      "VIEW_ALL_POSTS": "View all behind scenes"
+    },
+    "RECOMMENDATIONS": {
+      "TITLE": "Recommendations",
+      "SUBTITLE": "What professionals say about working with me",
+      "AT": "at",
+      "VIEW_PROFILE": "View profile",
+      "VIEW_ALL": "View all recommendations on LinkedIn"
+    },
+    "LABS_SECTION": {
+      "TITLE": "Interactive Prototype",
+      "INVESTMENT_TRACKER": {
+        "TITLE": "Investment Tracker",
+        "DESCRIPTION": "Platform for investment tracking and portfolio analysis."
+      },
+      "SLA_MONITOR": {
+        "TITLE": "SLA Monitor", 
+        "DESCRIPTION": "SLA monitoring system and performance metrics."
+      },
+      "DOC_GENERATOR": {
+        "TITLE": "Doc Generator",
+        "DESCRIPTION": "Automatic generator for technical documentation and reports."
+      }
+    },
+    "TECHNOLOGIES_SECTION": {
+      "TITLE": "Main Technologies"
+    },
+    "BEHIND_SCENES": {
+      "TITLE": "Behind the Scenes",
+      "CATEGORIES": {
+        "STARTUP": "Startup",
+        "AWARD": "Award",
+        "RESEARCH": "Research",
+        "DATASET": "Dataset",
+        "COLLABORATION": "Collaboration"
+      },
+      "POST_1": {
+        "TITLE": "Thrilled to announce that I'm co-founding Vercept!",
+        "DESCRIPTION": "So excited to build what's next. 🚀"
+      },
+      "POST_2": {
+        "TITLE": "Molmo won the Best Paper Honorable Mention at CVPR 2025!",
+        "DESCRIPTION": "Our work in computer vision has been recognized by the scientific community."
+      },
+      "POST_3": {
+        "TITLE": "🏆ProTHOR won the Outstanding Paper Award at NeurIPS 2022!",
+        "DESCRIPTION": "Revolutionizing simulation environments for AI with our innovative framework."
+      },
+      "POST_4": {
+        "TITLE": "Excited to announce Objaverse, a massive dataset of 3D objects",
+        "DESCRIPTION": "Working with broad applications across AI, providing resources for the community."
+      },
+      "POST_5": {
+        "TITLE": "Thrilled to collaborate at UW with Matt Farhadi and Ali!",
+        "DESCRIPTION": "New academic partnership promising advances in machine learning and AI."
+      }
+    }
+  },
+  "CV": {
+    "HERO": {
+      "TITLE": "SAP ABAP Consultant | S/4HANA & Integrations",
+      "SUBTITLE": "11+ years of development experience, focused on SAP S/4HANA, integrations (PI/PO, CPI) and Fiori."
+    },
+    "SIDEBAR": {
+      "ROLE": "SAP ABAP Specialist",
+      "BIO": "SAP consultant specialized in S/4HANA, integrations and ABAP development with over 11 years of experience.",
+      "STATS": {
+        "YEARS_EXPERIENCE": "Years of experience",
+        "PROJECTS": "Projects",
+        "CERTIFICATIONS": "Certifications"
+      },
+      "ACTIONS": {
+        "DOWNLOAD_CV": "Download CV",
+        "LINKEDIN": "LinkedIn",
+        "EMAIL": "Professional Email",
+        "CERTIFICATIONS": "Certifications"
+      },
+      "TOOLTIPS": {
+        "LINKEDIN": "Open LinkedIn profile",
+        "EMAIL": "Send professional email",
+        "CERTIFICATIONS": "View SAP certifications"
+      }
+    },
+    "SECTIONS": {
+      "ABOUT": "About me",
+      "HISTORY": "How it all started", 
+      "SKILLS": "Main Competencies",
+      "EXPERIENCE": "Professional Experience",
+      "PROJECTS": "Featured Projects",
+      "EDUCATION": "Academic Background",
+      "CERTIFICATIONS": "Certifications",
+      "LANGUAGES": "Languages",
+      "VIEW_ALL_PROJECTS": "View all projects"
+    },
+    "LABELS": {
+      "CURRENT": "Current",
+      "TECHNOLOGIES": "Technologies:",
+      "TECHNICAL_STACK": "Technical Stack:",
+      "ENDORSEMENTS": "endorsements",
+      "PERIOD": "Period"
+    },
+    "PROJECTS_PAGE": {
+      "TITLE": "All Projects",
+      "SUBTITLE": "Complete history of projects and contributions",
+      "FILTER": {
+        "TITLE": "Filter by Technology",
+        "ALL": "All",
+        "SELECTED": "technology selected",
+        "SELECTED_PLURAL": "technologies selected"
+      },
+      "STATS": {
+        "TOTAL_PROJECTS": "Projects",
+        "TECHNOLOGIES": "Technologies",
+        "TOTAL_DURATION": "Years of Experience",
+        "SHOWING": "Showing"
+      },
+      "EMPTY": {
+        "TITLE": "No projects found",
+        "WITH_TECH": "There are no projects with the technology",
+        "WITH_TECHS": "There are no projects with the technologies",
+        "NO_PROJECTS": "No projects available at the moment",
+        "VIEW_ALL": "View all projects"
+      },
+      "BACK_LINK": "Back to Resume"
+    },
+    "ABOUT_CONTENT": [
+      "I have been a developer for over 11 years, with 8 years as a SAP ABAP consultant.",
+      "I work as a specialist in SAP S/4HANA solution architecture and integrations with legacy and cloud systems.",
+      "I have experience leading technical teams in S/4HANA implementation and migration projects.",
+      "Passionate about automation, performance and innovative solutions that add business value."
+    ],
+    "HISTORY_CONTENT": [
+      "I started programming around age 15, creating macros to automate actions in online games. It was fascinating to see how a few lines of code could execute repetitive tasks more efficiently.",
+      "Then I started exploring .bat scripts and Windows automations, creating solutions that triggered specific actions from key combinations. This curiosity led me to discover the power of programming.",
+      "In 2014, I participated in a scientific research project on software agents at university, studying autonomous system behavior - long before the current generative AI revolution. That's where I learned about intelligent algorithms and decision-making systems.",
+      "This solid foundation in automation and intelligent systems became fundamental in my SAP career, where I apply these concepts to complex integrations and enterprise solutions."
+    ],
+    "SKILLS_AREAS": {
+      "SAP_BACKEND": "SAP Back-end",
+      "INTEGRATION": "Integration", 
+      "FRONTEND": "SAP & Web Frontend",
+      "SOFT_SKILLS": "Soft Skills & Leadership"
+    },
+    "CASES_LABELS": {
+      "TECHNICAL_STACK": "Technical Stack:",
+      "MAIN_RESULTS": "Main Results:",
+      "PERIOD": "Period"
+    },
+    "LANGUAGES_DATA": {
+      "PORTUGUESE": "Portuguese",
+      "ENGLISH": "English", 
+      "SPANISH": "Spanish",
+      "NATIVE": "Native",
+      "ADVANCED": "Advanced",
+      "INTERMEDIATE": "Intermediate"
+    }
+  },
+  "LOADING": {
+    "LOADING_CONTENT": "Loading content...",
+    "RETRY": "Try again",
+    "ERROR_LOADING": "Error loading data",
+    "NO_CONNECTION": "No connection to server"
+  },
+  "LABS": {
+    "TITLE": "Prototypes & Experiments",
+    "SUBTITLE": "Experimental projects and MVPs",
+    "STATUS": {
+      "PUBLISHED": "Published",
+      "DRAFT": "Draft",
+      "ACTIVE": "Active"
+    }
+  },
+  "AUTH": {
+    "LOGIN_TITLE": "Sign In",
+    "SIGNUP_TITLE": "Create Account",
+    "EMAIL": "Email",
+    "PERSONAL_EMAIL": "Personal Email",
+    "PERSONAL_EMAIL_HINT": "Use a personal email so you don't lose access if you change jobs",
+    "PASSWORD": "Password", 
+    "CONFIRM_PASSWORD": "Confirm Password",
+    "DISPLAY_NAME": "Display Name",
+    "REMEMBER_ME": "Remember me",
+    "FORGOT_PASSWORD": "Forgot password?",
+    "NO_ACCOUNT": "Don't have an account?",
+    "HAS_ACCOUNT": "Already have an account?",
+    "CREATE_ACCOUNT": "Create Account",
+    "SIGN_IN": "Sign In",
+    "LINKEDIN_SIGN_IN": "Sign in with LinkedIn",
+    "GOOGLE_SIGN_IN": "Sign in with Google",
+    "MICROSOFT_SIGN_IN": "Sign in with Microsoft",
+    "APPLE_SIGN_IN": "Sign in with Apple",
+    "MANUAL_SIGNUP": "Manual sign up",
+    "EMAIL_SIGN_IN": "Sign in with Email",
+    "OAUTH_ERROR": "Login failed. Please try again.",
+    "RETRY": "Try again",
+    "OR": "or",
+    "CONTINUE_WITH": "Continue with",
+    "PROVIDERS": {
+      "LINKEDIN": "LinkedIn",
+      "MICROSOFT": "Microsoft",
+      "EMAIL": "Email"
+    },
+    "CONNECT": {
+      "TITLE": "Connect your accounts",
+      "SUBTITLE": "Link your accounts to sync your professional data",
+      "LINKEDIN_BENEFIT": "Import your CV data from LinkedIn",
+      "MICROSOFT_BENEFIT": "Access Azure and Microsoft 365 APIs",
+      "CONNECT_BTN": "Connect",
+      "DISCONNECT_BTN": "Disconnect",
+      "CONNECTED": "Connected",
+      "NOT_CONNECTED": "Not connected",
+      "LAST_SYNC": "Last sync"
+    },
+    "CONFIRM_EMAIL": {
+      "TITLE": "Confirm your personal email",
+      "SUBTITLE": "We use your personal email as the main identifier for your account",
+      "WHY": "Why a personal email?",
+      "WHY_EXPLANATION": "Corporate emails change when you switch jobs. A personal email ensures you always have access to your account and CV data.",
+      "CONFIRM_BTN": "Confirm Email",
+      "CHANGE_EMAIL": "Use a different email"
+    },
+    "IMPORT": {
+      "BUTTON": "Import Resume PDF",
+      "PROCESSING": "Processing PDF...",
+      "MODAL_TITLE": "How to export your Resume from LinkedIn",
+      "STEP_1_TITLE": "Open LinkedIn in your browser",
+      "STEP_1_DESC": "Visit linkedin.com and sign in with your account",
+      "STEP_2_TITLE": "Click on your profile",
+      "STEP_2_DESC": "Click the 'Me' icon at the top of the page and select 'View profile'",
+      "STEP_3_TITLE": "Open the More menu",
+      "STEP_3_DESC": "On your profile card, look for the 'More' (...) button",
+      "STEP_4_TITLE": "Save as PDF",
+      "STEP_4_DESC": "Choose 'Save as PDF' from the dropdown menu",
+      "INFO_TIP": "The PDF will be analyzed automatically and your data will fill the form below",
+      "CLOSE_BUTTON": "Got it, close",
+      "OPEN_LINKEDIN": "Open LinkedIn",
+      "PREVIEW_TITLE": "Preview of extracted data",
+      "CLEAR": "Clear",
+      "PERSONAL_INFO": "Personal Information",
+      "NAME": "Name",
+      "EMAIL": "Email",
+      "LOCATION": "Location",
+      "SKILLS": "Skills",
+      "EXPERIENCE": "Work Experience",
+      "EDUCATION": "Education",
+      "CERTIFICATIONS": "Certifications",
+      "SUCCESS_PARSED": "PDF processed successfully! Check the data below",
+      "SUCCESS_IMPORTED": "Resume imported successfully!",
+      "SUCCESS_TITLE": "✓ Import successful",
+      "ERROR_TITLE": "✕ Import error",
+      "ERROR_GENERIC": "Error processing PDF. Try again.",
+      "ERROR_NOT_PDF": "Please select a valid PDF file",
+      "ERROR_FILE_TOO_LARGE": "File too large. Maximum 10MB",
+      "ERROR_IMPORT": "Error importing data from PDF",
+      "CONFIRM": "Confirm import",
+      "CANCEL": "Cancel"
+    },
+    "SYNC": {
+      "TITLE": "CV Sync",
+      "SUBTITLE": "Keep your CV updated with LinkedIn data",
+      "AUTO_SYNC": "Auto-sync on login",
+      "MANUAL_SYNC": "Sync now",
+      "SYNCING": "Syncing...",
+      "SYNC_SUCCESS": "CV synced successfully",
+      "SYNC_ERROR": "Failed to sync CV",
+      "SECTIONS": {
+        "POSITIONS": "Work Experience",
+        "EDUCATION": "Education",
+        "SKILLS": "Skills",
+        "CERTIFICATIONS": "Certifications",
+        "PROJECTS": "Projects",
+        "LANGUAGES": "Languages"
+      }
+    },
+    "ACCOUNT_SETTINGS": {
+      "TITLE": "Account Settings",
+      "PERSONAL_INFO": "Personal Information",
+      "CONNECTED_ACCOUNTS": "Connected Accounts",
+      "CV_SYNC_SETTINGS": "CV Sync Settings",
+      "DANGER_ZONE": "Danger Zone",
+      "DELETE_ACCOUNT": "Delete Account",
+      "DELETE_CONFIRM": "Are you sure? This action cannot be undone."
+    },
+    "NEW_PASSWORD": "New password",
+    "BACK_TO_LOGIN": "Back to login",
+    "FORGOT_TITLE": "Forgot your password?",
+    "FORGOT_DESCRIPTION": "Enter your email and we'll send you a link to reset your password.",
+    "FORGOT_SUBMIT": "Send reset link",
+    "FORGOT_SENT_TITLE": "Email sent!",
+    "FORGOT_SENT_TEXT": "If this email is registered, you'll receive a reset link shortly. Check your inbox.",
+    "RESET_TITLE": "Reset password",
+    "RESET_SUBMIT": "Save new password",
+    "RESET_DONE_TITLE": "Password reset!",
+    "RESET_DONE_TEXT": "Your password has been reset successfully. You can now sign in.",
+    "RESET_SUCCESS": "Password reset successfully!",
+    "RESET_INVALID_LINK": "Invalid reset link. Please request a new one.",
+    "ERRORS": {
+      "EMAIL_REQUIRED": "Email is required",
+      "EMAIL_INVALID": "Please enter a valid email",
+      "PASSWORD_REQUIRED": "Password is required",
+      "PASSWORD_MIN_LENGTH": "Password must be at least 8 characters",
+      "PASSWORDS_DONT_MATCH": "Passwords don't match",
+      "ACCOUNT_EXISTS": "An account with this email already exists",
+      "PROVIDER_ALREADY_LINKED": "This provider is already linked to your account",
+      "CANNOT_UNLINK_ONLY_PROVIDER": "Cannot disconnect your only login method",
+      "TOKEN_EXPIRED": "Your session has expired. Please sign in again.",
+      "GENERIC": "An error occurred. Please try again."
+    }
+  },
+  "BASTIDORES": {
+    "TITLE": "Behind the Scenes",
+    "SUBTITLE": "Follow my development journey through articles and experiences shared on dev.to",
+    "LOADING": "Loading articles...",
+    "NO_ARTICLES": "No articles published yet.",
+    "READ_MORE": "Read more",
+    "PUBLISHED_ON": "Published on",
+    "ALSO_ON": "Also on",
+    "LINKEDIN_HIGHLIGHTS": "LinkedIn Highlights",
+    "DEVTO_ARTICLES": "Technical Articles",
+    "VIEW_ON_LINKEDIN": "View on LinkedIn",
+    "STATS": {
+      "ARTICLES": "Articles",
+      "TAGS": "Tags",
+      "REACTIONS": "Reactions"
+    },
+    "SEARCH": {
+      "PLACEHOLDER": "Search articles by title, description or tags..."
+    },
+    "EMPTY": {
+      "TITLE": "No articles found",
+      "MESSAGE": "Try adjusting the filters or perform a new search",
+      "CLEAR_FILTERS": "Clear filters"
+    },
+    "BACK_TO_HOME": "Back to Home"
+  },
+  "COMMON": {
+    "LOADING": "Loading...",
+    "ERROR": "Error",
+    "SUCCESS": "Success",
+    "CANCEL": "Cancel",
+    "SAVE": "Save",
+    "EDIT": "Edit",
+    "DELETE": "Delete",
+    "VIEW_MORE": "View more",
+    "TIME": {
+      "MINUTE": "minute",
+      "MINUTES": "minutes",
+      "MIN": "min",
+      "MONTH": "month",
+      "MONTHS": "months",
+      "YEAR": "year",
+      "YEARS": "years",
+      "AND": "and"
+    }
+  },
+  "MEDALS": {
+    "LEVEL": "Level",
+    "TO_NEXT_RANK": "to next rank",
+    "PROGRESS_TO": "Progress to",
+    "REMAINING": "remaining",
+    "MAX_RANK_ACHIEVED": "Congratulations! You've reached the maximum rank!",
+    "TROPHY_CABINET": "Trophy Cabinet",
+    "UNLOCKED_ON": "Unlocked on",
+    "ALL_RANKS": "All Ranks",
+    "STATS": {
+      "PROJECTS": "Projects",
+      "SKILLS": "Skills",
+      "COLLABORATIONS": "Collaborations",
+      "CERTIFICATIONS": "Certifications"
+    },
+    "CATEGORIES": {
+      "ALL": "All",
+      "PROJECTS": "Projects",
+      "SKILLS": "Skills",
+      "COLLABORATION": "Collaboration",
+      "LEARNING": "Learning",
+      "ACHIEVEMENT": "Achievements",
+      "SPECIAL": "Special"
+    },
+    "RANKS": {
+      "RECRUIT": "Recruit",
+      "PRIVATE": "Private",
+      "SOLDIER": "Soldier",
+      "CORPORAL": "Corporal",
+      "SENIOR_CORPORAL": "Senior Corporal",
+      "SERGEANT": "Sergeant",
+      "SERGEANT_2ND": "Sergeant 2nd Class",
+      "SERGEANT_1ST": "Sergeant 1st Class",
+      "WARRANT_OFFICER": "Warrant Officer",
+      "ASPIRANT": "Aspirant",
+      "SECOND_LIEUTENANT": "Second Lieutenant",
+      "FIRST_LIEUTENANT": "First Lieutenant",
+      "CAPTAIN": "Captain",
+      "MAJOR": "Major",
+      "LIEUTENANT_COLONEL": "Lieutenant Colonel",
+      "COLONEL": "Colonel",
+      "BRIGADIER_GENERAL": "Brigadier General",
+      "MAJOR_GENERAL": "Major General",
+      "LIEUTENANT_GENERAL": "Lieutenant General",
+      "GENERAL": "General",
+      "FIELD_MARSHAL": "Field Marshal",
+      "GRAND_MARSHAL": "Grand Marshal",
+      "SUPREME_COMMANDER": "Supreme Commander",
+      "LIVING_LEGEND": "Living Legend",
+      "MASTER": "Master",
+      "GRANDMASTER": "Grandmaster",
+      "VIRTUOSO": "Virtuoso",
+      "PRODIGY": "Prodigy",
+      "ICON": "Icon",
+      "IMMORTAL": "Immortal",
+      "TRANSCENDENT": "Transcendent",
+      "ETERNAL": "Eternal"
+    },
+    "PROJECT_BASIC": {
+      "NAME": "Builder",
+      "DESC": "Complete projects to gain practical experience"
+    },
+    "PROJECT_ADVANCED": {
+      "NAME": "Architect",
+      "DESC": "Develop advanced and complex projects"
+    },
+    "PROJECT_MASTERY": {
+      "NAME": "Project Master",
+      "DESC": "Master the art of delivering excellent projects"
+    },
+    "SKILL_COLLECTOR": {
+      "NAME": "Skill Collector",
+      "DESC": "Acquire various technical skills"
+    },
+    "SKILL_EXPERT": {
+      "NAME": "Expert",
+      "DESC": "Become an expert in multiple technologies"
+    },
+    "POLYGLOT": {
+      "NAME": "Polyglot",
+      "DESC": "Master several programming languages"
+    },
+    "TEAM_PLAYER": {
+      "NAME": "Team Player",
+      "DESC": "Collaborate effectively with other professionals"
+    },
+    "MENTOR": {
+      "NAME": "Mentor",
+      "DESC": "Share knowledge and teach others"
+    },
+    "COMMUNITY_LEADER": {
+      "NAME": "Community Leader",
+      "DESC": "Lead and inspire the developer community"
+    },
+    "ETERNAL_STUDENT": {
+      "NAME": "Eternal Student",
+      "DESC": "Never stop learning and evolving"
+    },
+    "CERTIFICATION_HUNTER": {
+      "NAME": "Certification Hunter",
+      "DESC": "Earn professional certifications"
+    },
+    "PUBLISHED_AUTHOR": {
+      "NAME": "Published Author",
+      "DESC": "Publish articles and technical content"
+    },
+    "INFLUENCER": {
+      "NAME": "Influencer",
+      "DESC": "Reach and inspire thousands of people"
+    },
+    "EARLY_ADOPTER": {
+      "NAME": "Pioneer",
+      "DESC": "Be among the first to explore new technologies"
+    },
+    "INNOVATION_AWARD": {
+      "NAME": "Innovation Award",
+      "DESC": "Create innovative and disruptive solutions"
+    }
+  }
+}

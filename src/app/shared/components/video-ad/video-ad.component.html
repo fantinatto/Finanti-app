@@ -1,0 +1,28 @@
+<div class="video-ad-overlay" *ngIf="visible">
+  <div class="video-ad-modal">
+    <div class="video-ad-header">
+      <span class="video-ad-label">Anúncio</span>
+      <span class="video-ad-counter">
+        {{ canSkip ? 'Pronto!' : countdown + 's' }}
+      </span>
+    </div>
+
+    <div class="video-ad-body">
+      <!-- Slot para vídeo/AdSense de vídeo -->
+      <div class="video-placeholder">
+        <div class="video-placeholder-icon">▶</div>
+        <p>Assista ao anúncio para continuar</p>
+        <small>{{ countdown > 0 ? 'Aguarde ' + countdown + ' segundos...' : 'Você pode fechar agora' }}</small>
+      </div>
+    </div>
+
+    <div class="video-ad-footer">
+      <a routerLink="/pricing" class="btn-upgrade" (click)="visible = false">
+        ⭐ Remover anúncios com PRO
+      </a>
+      <button class="btn-close" [disabled]="!canSkip" (click)="finish()">
+        {{ canSkip ? 'Continuar →' : 'Aguarde ' + countdown + 's' }}
+      </button>
+    </div>
+  </div>
+</div>

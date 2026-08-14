@@ -1,0 +1,28 @@
+<header class="app-header" *ngIf="(authService.authState$ | async)?.isAuthenticated">
+  <div class="left">
+    <a routerLink="/account" class="logo">Fin<span class="logo-up">anti</span></a>
+  </div>
+
+  <nav class="nav desktop-nav">
+    <a routerLink="/account" routerLinkActive="active" class="nav-link">Conta</a>
+  </nav>
+
+  <div class="right">
+    <button class="btn-signout" (click)="logout()">Sair</button>
+  </div>
+</header>
+
+<main class="app-main">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="app-footer">
+  <div class="footer-inner">
+    <span class="footer-brand">© {{ year }} Finanti</span>
+    <nav class="footer-nav">
+      <a routerLink="/privacidade">Privacidade</a>
+      <a routerLink="/termos">Termos</a>
+      <a routerLink="/contato">Contato</a>
+    </nav>
+  </div>
+</footer>

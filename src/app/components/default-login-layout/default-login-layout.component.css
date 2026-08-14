@@ -1,0 +1,206 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+main {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    min-height: 70vh;
+    background-color: var(--background-color);
+    gap: 24px;
+    padding: 24px;
+}
+
+section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* --------------------------- */
+    /* Form Section (lado esquerdo) */
+    /* --------------------------- */
+.form-section {
+    flex: 0 0 35%;
+    background-color: var(--surface-color);
+    min-height: 100%;
+    box-shadow: var(--shadow-md);
+    align-items: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 32px;
+    gap: 20px;
+}
+
+.form-section h2 {
+    color: var(--primary-color);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.form-section button {
+    width: 100%;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 0.8rem 0;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.form-section button:disabled {
+    opacity: 0.2;
+}
+
+.form-section .primary-btn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.form-section .primary-btn:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-2px);
+}
+.form-section .primary-btn .btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.form-section .secondary-btn {
+    background-color: transparent;
+    border: 2px solid var(--secondary-color);
+    color: var(--secondary-color);
+}
+
+.form-section .secondary-btn:hover {
+    background-color: var(--hover-bg);
+}
+
+.form-section .divider {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.form-section .divider span {
+    width: 60%;
+    height: 1px;
+    background-color: var(--border-color);
+}
+
+/* --------------------------- */
+/* Main Section (lado direito) */
+/* --------------------------- */
+.main-section {
+    flex: 1 1 65%;
+    background-color: var(--background-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 20px;
+    text-align: center;
+}
+
+.main-section .hero-text {
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.hero-badge {
+    display: inline-block;
+    background-color: var(--hover-bg);
+    color: var(--accent-hover);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 4px 14px;
+    border-radius: 18px;
+    border: 1px solid var(--border-hover);
+}
+
+.main-section h1 {
+    color: var(--primary-color);
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+    margin: 0;
+}
+
+.main-section h1 .highlight {
+    color: var(--accent-color);
+}
+
+.main-section h2 {
+    color: var(--text-secondary);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.feature-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.chip {
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--primary-color);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 18px;
+    box-shadow: var(--shadow-sm);
+}
+
+/* --------------------------- */
+/* Responsividade (Mobile e Tablet) */
+/* --------------------------- */
+@media (max-width: 960px) {
+    main {
+        flex-direction: column;
+    }
+    .form-section,
+    .main-section {
+        flex: 1 1 auto;
+        width: 100%;
+        box-shadow: none;
+        padding: 16px;
+    }
+    .main-section h1 {
+        font-size: 40px;
+    }
+
+    .main-section h2 {
+        font-size: 16px;
+    }
+
+    .feature-chips {
+        margin-top: 4px;
+    }
+}

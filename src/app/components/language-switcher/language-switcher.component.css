@@ -1,0 +1,55 @@
+.lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--surface-color);
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(15, 44, 60, 0.08);
+  border: 1px solid var(--border-color);
+}
+
+.lang-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  opacity: 0.5;
+  contain: layout style;
+  width: 48px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: opacity;
+  transform: translateZ(0);
+}
+
+.lang-btn:hover {
+  opacity: 0.8;
+  background: rgba(15, 44, 60, 0.05);
+}
+
+.lang-btn.active {
+  opacity: 1;
+  background: rgba(59, 214, 113, 0.1);
+  box-shadow: 0 2px 4px rgba(59, 214, 113, 0.2);
+}
+
+.divider {
+  width: 1px;
+  height: 1.2rem;
+  background: var(--border-color);
+  opacity: 0.5;
+}
+
+.flag-img {
+  
+  width: 31.2px;
+  height: 20.8px;
+  border-radius: 0.2px;
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.1);
+}

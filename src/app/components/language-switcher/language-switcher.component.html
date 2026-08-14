@@ -1,0 +1,21 @@
+<div class="lang-switcher">
+  <button
+    [class.active]="isActive('pt')"
+    (click)="setLang('pt')"
+    [title]="langService.getLanguageName('pt')"
+    class="lang-btn"
+  >
+    <img src="/assets/svg/bandeira-brasil.jpg" alt="Brasil" class="flag-img">
+  </button>
+  
+  <div class="divider"></div>
+  
+  <button
+    [class.active]="isActive('en')"
+    (click)="setLang('en')"
+    [title]="langService.getLanguageName('en')"
+    class="lang-btn"
+  >
+    <img src="/assets/svg/bandeira-reino-unido.jpg" alt="Reino Unido" class="flag-img">
+  </button>
+</div>

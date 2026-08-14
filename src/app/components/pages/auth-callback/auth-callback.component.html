@@ -1,0 +1,56 @@
+<section class="auth-callback-container">
+  
+  <!-- Processing State -->
+  <div *ngIf="status === 'processing'" class="callback-state processing">
+    <div class="spinner"></div>
+    <h2>{{ 'AUTH.SIGN_IN' | translate }}</h2>
+    <p>{{ 'COMMON.LOADING' | translate }}</p>
+  </div>
+
+  <!-- Success State -->
+  <div *ngIf="status === 'success'" class="callback-state success">
+    <div class="icon success-icon">✓</div>
+    <h2>{{ 'COMMON.SUCCESS' | translate }}</h2>
+    <p>{{ 'AUTH.SIGN_IN' | translate }}...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="status === 'error'" class="callback-state error">
+    <div class="icon error-icon">✕</div>
+    <h2>{{ 'COMMON.ERROR' | translate }}</h2>
+    <p class="error-message">{{ errorMessage }}</p>
+    <div class="actions">
+      <button class="retry-btn" (click)="retry()">
+        {{ 'AUTH.RETRY' | translate }}
+      </button>
+      <button class="secondary-btn" (click)="goToLogin()">
+        {{ 'AUTH.SIGN_IN' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Needs Email Confirmation State -->
+  <div *ngIf="status === 'needs-email'" class="callback-state needs-email">
+    <div class="icon email-icon">📧</div>
+    <h2>{{ 'AUTH.CONFIRM_EMAIL.TITLE' | translate }}</h2>
+    <p>{{ 'AUTH.CONFIRM_EMAIL.SUBTITLE' | translate }}</p>
+    
+    <div class="email-explanation">
+      <strong>{{ 'AUTH.CONFIRM_EMAIL.WHY' | translate }}</strong>
+      <p>{{ 'AUTH.CONFIRM_EMAIL.WHY_EXPLANATION' | translate }}</p>
+    </div>
+
+    <!-- Email from OAuth shown as suggestion -->
+    <div *ngIf="oauthResponse?.linkedAccount?.email" class="suggested-email">
+      <span>{{ oauthResponse?.linkedAccount?.email }}</span>
+      <button class="use-email-btn" (click)="goToLogin()">
+        {{ 'AUTH.CONFIRM_EMAIL.CONFIRM_BTN' | translate }}
+      </button>
+    </div>
+
+    <button class="change-email-btn" (click)="goToLogin()">
+      {{ 'AUTH.CONFIRM_EMAIL.CHANGE_EMAIL' | translate }}
+    </button>
+  </div>
+
+</section>

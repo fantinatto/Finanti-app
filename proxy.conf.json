@@ -1,0 +1,8 @@
+{
+  "/api/statusinvest": {
+    "target": "https://statusinvest.com.br",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": { "^/api/statusinvest": "" }
+  }
+}

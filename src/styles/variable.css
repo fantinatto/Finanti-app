@@ -1,0 +1,32 @@
+    /* src/styles.css */
+    :root {
+      --primary-color: #1A3C56;   
+      --secundary-color: #3BD671; 
+      --acento-color:  #7B6EF6;  
+      --background-color: #F6F8FB;  
+      --teste-var: #3BD671;
+      --font-stack: 'Poppins';
+    }
+
+    :input {
+      --text-color: #555555;
+      --gay-bg: #EEEEEE;
+    }
+    
+    :all{
+      --margin: 0;
+      --padding: 0;
+      box-sizing: border-box;
+
+    }
+
+
+:body {
+  --background-color: $background-color;
+  --color: $primary-color;
+}
+
+:button {
+  --font-family: 'Poppins', sans-serif;
+  --border-radius: 8px;
+}

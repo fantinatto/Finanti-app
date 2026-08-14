@@ -1,0 +1,43 @@
+.ad-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ad-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #bbb;
+  align-self: flex-start;
+}
+
+.ad-upgrade-link {
+  font-size: 11px;
+  color: #1976d2;
+  text-decoration: none;
+  align-self: flex-end;
+  &:hover { text-decoration: underline; }
+}
+
+/* Banner: ocupa largura total */
+.ad-wrap--banner {
+  width: 100%;
+  padding: 8px 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+
+  ins { width: 100%; }
+}
+
+/* Rectangle: centrado */
+.ad-wrap--rectangle {
+  margin: 16px auto;
+}
+
+/* Sidebar: compacto */
+.ad-wrap--sidebar {
+  .ad-upgrade-link { font-size: 10px; }
+}

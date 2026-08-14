@@ -1,0 +1,43 @@
+<app-default-login-layout
+    primaryBtnText=""
+    secondaryBtnText="{{ 'NAV.SIGNUP' | translate }}"
+    (navigate)="onNavigate()"
+    [disablePrimaryBtn]="true">
+
+    <form [formGroup]="loginForm" (ngSubmit)="submitEmailLogin()" class="email-form-container">
+        <app-primary-input
+            formControlName="email"
+            inputName="email"
+            type="email"
+            label="{{ 'AUTH.EMAIL' | translate }}"
+            placeholder="fulano@gmail.com"
+            [errorMessage]="emailError">
+            <img src="/assets/svg/mail-icon.svg" alt="Email">
+        </app-primary-input>
+
+        <div class="password-group">
+            <app-primary-input
+                formControlName="password"
+                inputName="password"
+                type="password"
+                label="{{ 'AUTH.PASSWORD' | translate }}"
+                [errorMessage]="passwordError">
+                <img src="/assets/svg/pw-icon.svg" alt="Password">
+            </app-primary-input>
+            <span class="forgot-password" routerLink="/forgot-password">{{ 'AUTH.FORGOT_PASSWORD' | translate }}</span>
+        </div>
+
+        <div *ngIf="errorMessage" class="error-message">
+            {{ errorMessage }}
+        </div>
+
+        <button
+            type="submit"
+            class="submit-btn"
+            [disabled]="isLoading">
+            <span *ngIf="isLoading" class="loading-spinner"></span>
+            <span *ngIf="!isLoading">{{ 'AUTH.SIGN_IN' | translate }}</span>
+        </button>
+    </form>
+
+</app-default-login-layout>

@@ -1,0 +1,38 @@
+<ng-container *ngIf="shouldShow">
+
+  <!-- Banner horizontal (topo/rodapé de página) -->
+  <div class="ad-wrap ad-wrap--banner" *ngIf="slot === 'banner'">
+    <span class="ad-label">Publicidade</span>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-6681234767999952"
+         [attr.data-ad-slot]="adSlotId || '1234567890'"
+         data-ad-format="auto"
+         data-full-width-responsive="true">
+    </ins>
+    <a routerLink="/pricing" class="ad-upgrade-link">Remover anúncios com PRO →</a>
+  </div>
+
+  <!-- Retângulo (meio de conteúdo) -->
+  <div class="ad-wrap ad-wrap--rectangle" *ngIf="slot === 'rectangle'">
+    <span class="ad-label">Publicidade</span>
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:336px;height:280px"
+         data-ad-client="ca-pub-6681234767999952"
+         [attr.data-ad-slot]="adSlotId || '0987654321'">
+    </ins>
+    <a routerLink="/pricing" class="ad-upgrade-link">Remover anúncios com PRO →</a>
+  </div>
+
+  <!-- Sidebar / skyscraper -->
+  <div class="ad-wrap ad-wrap--sidebar" *ngIf="slot === 'sidebar'">
+    <span class="ad-label">Publicidade</span>
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:160px;height:600px"
+         data-ad-client="ca-pub-6681234767999952"
+         [attr.data-ad-slot]="adSlotId || '1122334455'">
+    </ins>
+    <a routerLink="/pricing" class="ad-upgrade-link">PRO →</a>
+  </div>
+
+</ng-container>

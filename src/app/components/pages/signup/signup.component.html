@@ -1,0 +1,60 @@
+<app-default-login-layout
+    title="{{ 'AUTH.SIGNUP_TITLE' | translate }}"
+    primaryBtnText=""
+    secondaryBtnText="{{ 'AUTH.SIGN_IN' | translate }}"
+    (navigate)="navigate()"
+    [disablePrimaryBtn]="true">
+
+    <form [formGroup]="signupForm" (ngSubmit)="submitEmailSignup()" class="email-form-container">
+        <app-primary-input
+            formControlName="displayName"
+            inputName="displayName"
+            type="text"
+            label="{{ 'AUTH.DISPLAY_NAME' | translate }}"
+            placeholder="João Silva"
+            [errorMessage]="displayNameError">
+            <img src="/assets/svg/mail-icon.svg" alt="Name">
+        </app-primary-input>
+
+        <app-primary-input
+            formControlName="email"
+            inputName="email"
+            type="email"
+            label="{{ 'AUTH.PERSONAL_EMAIL' | translate }}"
+            placeholder="joao@gmail.com"
+            [errorMessage]="emailError">
+            <img src="/assets/svg/mail-icon.svg" alt="Email">
+        </app-primary-input>
+
+        <app-primary-input
+            formControlName="password"
+            inputName="password"
+            type="password"
+            label="{{ 'AUTH.PASSWORD' | translate }}"
+            [errorMessage]="passwordError">
+            <img src="/assets/svg/pw-icon.svg" alt="Password">
+        </app-primary-input>
+
+        <app-primary-input
+            formControlName="passwordConfirm"
+            inputName="passwordConfirm"
+            type="password"
+            label="{{ 'AUTH.CONFIRM_PASSWORD' | translate }}"
+            [errorMessage]="passwordConfirmError">
+            <img src="/assets/svg/pw-icon.svg" alt="Confirm Password">
+        </app-primary-input>
+
+        <div *ngIf="errorMessage" class="error-message">
+            {{ errorMessage }}
+        </div>
+
+        <button
+            type="submit"
+            class="submit-btn"
+            [disabled]="isLoading">
+            <span *ngIf="isLoading" class="loading-spinner"></span>
+            {{ 'AUTH.CREATE_ACCOUNT' | translate }}
+        </button>
+    </form>
+
+</app-default-login-layout>

@@ -1,0 +1,213 @@
+<div class="medals-container">
+  <!-- Hero Section com Rank Atual -->
+  <section class="rank-hero">
+    <div class="rank-card">
+      <div class="rank-icon" [style.color]="currentRank.color">
+        {{ currentRank.icon }}
+      </div>
+      <div class="rank-info">
+        <h1 class="rank-title">{{ currentRank.name }}</h1>
+        <p class="rank-level">{{ 'MEDALS.LEVEL' | translate }} {{ currentRank.level }}</p>
+        <div class="xp-info">
+          <span class="current-xp">{{ userProgress.currentXP | number }} XP</span>
+          <span class="next-rank" *ngIf="nextRank">
+            / {{ nextRank.minXP | number }} XP {{ 'MEDALS.TO_NEXT_RANK' | translate }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Progresso -->
+    <div class="progress-section" *ngIf="nextRank">
+      <div class="progress-header">
+        <span class="progress-label">{{ 'MEDALS.PROGRESS_TO' | translate }} {{ nextRank.name }}</span>
+        <span class="progress-percentage">{{ progressToNextRank | number:'1.0-0' }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="progressToNextRank"></div>
+      </div>
+    </div>
+
+    <!-- Próximo Rank -->
+    <div class="next-rank-preview" *ngIf="nextRank">
+      <span class="next-rank-icon" [style.color]="nextRank.color">{{ nextRank.icon }}</span>
+      <span class="next-rank-name">{{ nextRank.name }}</span>
+      <span class="xp-needed">{{ nextRank.minXP - userProgress.currentXP | number }} XP {{ 'MEDALS.REMAINING' | translate }}</span>
+    </div>
+
+    <!-- Max Rank Atingido -->
+    <div class="max-rank-message" *ngIf="!nextRank">
+      <span class="trophy-icon">🏆</span>
+      <p>{{ 'MEDALS.MAX_RANK_ACHIEVED' | translate }}</p>
+    </div>
+  </section>
+
+  <!-- Estatísticas Rápidas -->
+  <section class="stats-overview">
+    <div class="stat-card">
+      <div class="stat-icon">📁</div>
+      <div class="stat-value">{{ userProgress.totalProjects }}</div>
+      <div class="stat-label">{{ 'MEDALS.STATS.PROJECTS' | translate }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-value">{{ userProgress.totalSkills }}</div>
+      <div class="stat-label">{{ 'MEDALS.STATS.SKILLS' | translate }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🤝</div>
+      <div class="stat-value">{{ userProgress.totalCollaborations }}</div>
+      <div class="stat-label">{{ 'MEDALS.STATS.COLLABORATIONS' | translate }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏅</div>
+      <div class="stat-value">{{ userProgress.certificationsEarned }}</div>
+      <div class="stat-label">{{ 'MEDALS.STATS.CERTIFICATIONS' | translate }}</div>
+    </div>
+  </section>
+
+  <!-- Filtros de Categoria -->
+  <section class="category-filters">
+    <h2 class="section-title">{{ 'MEDALS.TROPHY_CABINET' | translate }}</h2>
+    <div class="filter-buttons">
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === 'all'"
+        (click)="selectedCategory = 'all'">
+        <span class="filter-icon">{{ getCategoryIcon('all') }}</span>
+        {{ 'MEDALS.CATEGORIES.ALL' | translate }}
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === MedalCategory.PROJECTS"
+        (click)="selectedCategory = MedalCategory.PROJECTS">
+        <span class="filter-icon">{{ getCategoryIcon(MedalCategory.PROJECTS) }}</span>
+        {{ 'MEDALS.CATEGORIES.PROJECTS' | translate }}
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === MedalCategory.SKILLS"
+        (click)="selectedCategory = MedalCategory.SKILLS">
+        <span class="filter-icon">{{ getCategoryIcon(MedalCategory.SKILLS) }}</span>
+        {{ 'MEDALS.CATEGORIES.SKILLS' | translate }}
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === MedalCategory.COLLABORATION"
+        (click)="selectedCategory = MedalCategory.COLLABORATION">
+        <span class="filter-icon">{{ getCategoryIcon(MedalCategory.COLLABORATION) }}</span>
+        {{ 'MEDALS.CATEGORIES.COLLABORATION' | translate }}
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === MedalCategory.LEARNING"
+        (click)="selectedCategory = MedalCategory.LEARNING">
+        <span class="filter-icon">{{ getCategoryIcon(MedalCategory.LEARNING) }}</span>
+        {{ 'MEDALS.CATEGORIES.LEARNING' | translate }}
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === MedalCategory.ACHIEVEMENT"
+        (click)="selectedCategory = MedalCategory.ACHIEVEMENT">
+        <span class="filter-icon">{{ getCategoryIcon(MedalCategory.ACHIEVEMENT) }}</span>
+        {{ 'MEDALS.CATEGORIES.ACHIEVEMENT' | translate }}
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="selectedCategory === MedalCategory.SPECIAL"
+        (click)="selectedCategory = MedalCategory.SPECIAL">
+        <span class="filter-icon">{{ getCategoryIcon(MedalCategory.SPECIAL) }}</span>
+        {{ 'MEDALS.CATEGORIES.SPECIAL' | translate }}
+      </button>
+    </div>
+  </section>
+
+  <!-- Grid de Medalhas -->
+  <section class="medals-grid">
+    <div 
+      *ngFor="let medal of filteredMedals" 
+      class="medal-card"
+      [class.locked]="medal.tier === 'locked'"
+      [class.bronze]="medal.tier === 'bronze'"
+      [class.silver]="medal.tier === 'silver'"
+      [class.gold]="medal.tier === 'gold'">
+      
+      <!-- Medal Icon com Watermark Effect -->
+      <div class="medal-icon-wrapper">
+        <div 
+          class="medal-icon" 
+          [style.opacity]="getMedalOpacity(medal.tier)"
+          [style.filter]="medal.tier !== 'locked' ? 'drop-shadow(0 0 10px ' + getMedalColor(medal.tier) + ')' : 'grayscale(1)'">
+          {{ medal.icon }}
+        </div>
+        <div class="medal-tier-badge" *ngIf="medal.tier !== 'locked'">
+          <span class="tier-text">{{ medal.tier | uppercase }}</span>
+        </div>
+      </div>
+
+      <!-- Medal Info -->
+      <div class="medal-info">
+        <h3 class="medal-name">{{ medal.nameKey | translate }}</h3>
+        <p class="medal-description">{{ medal.descriptionKey | translate }}</p>
+        
+        <!-- Progress Bar -->
+        <div class="medal-progress">
+          <div class="progress-text">
+            <span class="progress-current">{{ medal.progress }}</span>
+            <span class="progress-separator">/</span>
+            <span class="progress-max">{{ medal.maxProgress }}</span>
+          </div>
+          <div class="mini-progress-bar">
+            <div 
+              class="mini-progress-fill" 
+              [style.width.%]="(medal.progress / medal.maxProgress) * 100"
+              [style.background-color]="getMedalColor(medal.tier)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tier Requirements -->
+        <div class="tier-requirements">
+          <div class="requirement-item" [class.achieved]="medal.progress >= medal.requirements.bronze">
+            <span class="req-icon bronze-icon">🥉</span>
+            <span class="req-value">{{ medal.requirements.bronze }}</span>
+          </div>
+          <div class="requirement-item" [class.achieved]="medal.progress >= medal.requirements.silver">
+            <span class="req-icon silver-icon">🥈</span>
+            <span class="req-value">{{ medal.requirements.silver }}</span>
+          </div>
+          <div class="requirement-item" [class.achieved]="medal.progress >= medal.requirements.gold">
+            <span class="req-icon gold-icon">🥇</span>
+            <span class="req-value">{{ medal.requirements.gold }}</span>
+          </div>
+        </div>
+
+        <!-- Unlocked Date -->
+        <div class="unlocked-date" *ngIf="medal.unlockedAt">
+          <span class="date-icon">🔓</span>
+          {{ 'MEDALS.UNLOCKED_ON' | translate }} {{ medal.unlockedAt | date: 'dd/MM/yyyy' }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rank Ladder (Todos os Ranks) -->
+  <section class="rank-ladder">
+    <h2 class="section-title">{{ 'MEDALS.ALL_RANKS' | translate }}</h2>
+    <div class="ladder-grid">
+      <div 
+        *ngFor="let rank of ranks" 
+        class="ladder-rank"
+        [class.current]="rank.level === currentRank.level"
+        [class.achieved]="userProgress.currentXP >= rank.minXP"
+        [class.locked]="userProgress.currentXP < rank.minXP">
+        <div class="ladder-icon" [style.color]="rank.color">{{ rank.icon }}</div>
+        <div class="ladder-info">
+          <span class="ladder-level">Lvl {{ rank.level }}</span>
+          <span class="ladder-name">{{ rank.name }}</span>
+          <span class="ladder-xp">{{ rank.minXP | number }} XP</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

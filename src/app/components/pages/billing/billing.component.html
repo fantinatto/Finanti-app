@@ -1,0 +1,148 @@
+<div class="billing-page">
+
+  <!-- Workspace não é organização -->
+  <div class="billing-empty" *ngIf="!isOrgWorkspace">
+    <div class="billing-empty__icon">🏢</div>
+    <h2>Nenhuma organização selecionada</h2>
+    <p>Mude para o diretório de uma organização pelo seletor no topo da página para gerenciar o billing.</p>
+  </div>
+
+  <!-- Organização selecionada -->
+  <ng-container *ngIf="isOrgWorkspace">
+    <div class="billing-header">
+      <div>
+        <h1 class="billing-title">Billing & Módulos</h1>
+        <p class="billing-subtitle" *ngIf="orgName">{{ orgName }}</p>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="billing-loading" *ngIf="loading">
+      <div class="billing-spinner"></div>
+      <span>Carregando informações de billing…</span>
+    </div>
+
+    <!-- Erro -->
+    <div class="billing-error" *ngIf="!loading && loadError">
+      <span>Não foi possível carregar as informações. </span>
+      <button class="btn-link" (click)="loadBilling()">Tentar novamente</button>
+    </div>
+
+    <!-- Conteúdo -->
+    <ng-container *ngIf="!loading && !loadError && billing">
+
+      <!-- Card de assinatura -->
+      <section class="billing-section">
+        <h2 class="section-title">Assinatura</h2>
+        <div class="subscription-card">
+          <div class="subscription-info">
+            <ng-container *ngIf="billing.subscription; else noSub">
+              <div class="sub-row">
+                <span class="sub-label">Plano</span>
+                <span class="sub-value">{{ billing.subscription.plan }}</span>
+              </div>
+              <div class="sub-row">
+                <span class="sub-label">Status</span>
+                <span class="status-badge" [ngClass]="'status-badge--' + billing.subscription.status.toLowerCase()">
+                  {{ billing.subscription.status === 'ACTIVE' ? 'Ativa' :
+                     billing.subscription.status === 'TRIALING' ? 'Em teste' :
+                     billing.subscription.status === 'PAST_DUE' ? 'Pagamento pendente' : 'Cancelada' }}
+                </span>
+              </div>
+              <div class="sub-row">
+                <span class="sub-label">Próxima cobrança</span>
+                <span class="sub-value">{{ billing.subscription.currentPeriodEnd | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </ng-container>
+            <ng-template #noSub>
+              <p class="sub-none">Nenhuma assinatura ativa. Ative um módulo abaixo para começar.</p>
+            </ng-template>
+          </div>
+          <button
+            class="btn-portal"
+            (click)="openPortal()"
+            [disabled]="portalLoading || !billing.hasStripeCustomer"
+            *ngIf="billing.hasStripeCustomer">
+            {{ portalLoading ? 'Abrindo…' : '💳 Gerenciar pagamento' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Módulos ativos -->
+      <section class="billing-section" *ngIf="activeModules().length > 0">
+        <h2 class="section-title">Módulos ativos</h2>
+        <div class="modules-grid">
+          <div class="module-card module-card--active" *ngFor="let def of activeModules()">
+            <div class="module-card__top">
+              <div>
+                <p class="module-card__name">{{ def.label }}</p>
+                <p class="module-card__desc">{{ def.description }}</p>
+              </div>
+              <span class="status-badge" [ngClass]="'status-badge--' + (getModule(def.key)?.status ?? '').toLowerCase()">
+                {{ getStatusLabel(getModule(def.key)!.status) }}
+              </span>
+            </div>
+            <div class="module-card__bottom">
+              <span class="module-card__price">{{ def.price }}</span>
+              <button
+                class="btn-cancel"
+                (click)="cancel(def)"
+                [disabled]="canceling[def.key]">
+                {{ canceling[def.key] ? 'Cancelando…' : 'Cancelar módulo' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA para contratar novos módulos -->
+      <section class="billing-section billing-section--cta">
+        <div class="cta-card">
+          <div>
+            <p class="cta-title">Quer adicionar mais módulos?</p>
+            <p class="cta-desc">Planejamento, RH, Financeiro e Integrações disponíveis para sua organização.</p>
+          </div>
+          <button class="btn-pricing" (click)="goToPricing()">Ver planos e módulos</button>
+        </div>
+      </section>
+
+      <!-- Diagnóstico -->
+      <section class="billing-section" *ngIf="isLocalDev">
+        <h2 class="section-title">Diagnóstico</h2>
+
+        <!-- Testar conexão -->
+        <div class="diag-card">
+          <div class="diag-info">
+            <p class="diag-label">Conexão com Stripe</p>
+            <p class="diag-result"
+               *ngIf="stripeTestResult"
+               [class.diag-result--ok]="stripeTestResult.ok"
+               [class.diag-result--error]="!stripeTestResult.ok">
+              {{ stripeTestResult.ok ? '✓' : '✗' }} {{ stripeTestResult.message }}
+            </p>
+          </div>
+          <button class="btn-diag" (click)="testStripe()" [disabled]="stripeTestLoading">
+            {{ stripeTestLoading ? 'Testando…' : 'Testar conexão' }}
+          </button>
+        </div>
+
+        <!-- Sincronizar produtos -->
+        <div class="diag-card" style="margin-top: 0.75rem;">
+          <div class="diag-info">
+            <p class="diag-label">Sincronizar produtos com Stripe</p>
+            <p class="diag-result"
+               *ngIf="syncResult"
+               [class.diag-result--ok]="syncResult.synced > 0"
+               [class.diag-result--error]="syncResult.synced === 0">
+              ✓ {{ syncResult.synced }} sincronizado(s), {{ syncResult.skipped }} ignorado(s)
+            </p>
+          </div>
+          <button class="btn-diag" (click)="syncProducts()" [disabled]="syncLoading">
+            {{ syncLoading ? 'Sincronizando…' : '↻ Sincronizar agora' }}
+          </button>
+        </div>
+      </section>
+
+    </ng-container>
+  </ng-container>
+</div>

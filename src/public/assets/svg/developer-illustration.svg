@@ -1,0 +1,46 @@
+<svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="500" height="400" fill="#FAFBFC"/>
+  
+  <!-- Desk -->
+  <rect x="50" y="300" width="400" height="80" rx="10" fill="#1A3C56"/>
+  
+  <!-- Computer Screen -->
+  <rect x="150" y="180" width="200" height="130" rx="8" fill="#2C3E50"/>
+  <rect x="160" y="190" width="180" height="110" rx="4" fill="#3BD671"/>
+  
+  <!-- Code Lines -->
+  <rect x="170" y="200" width="120" height="4" fill="#1A3C56"/>
+  <rect x="170" y="210" width="160" height="4" fill="#1A3C56"/>
+  <rect x="170" y="220" width="80" height="4" fill="#1A3C56"/>
+  <rect x="170" y="230" width="140" height="4" fill="#1A3C56"/>
+  
+  <!-- Laptop Base -->
+  <rect x="140" y="305" width="220" height="15" rx="8" fill="#34495E"/>
+  
+  <!-- Coffee Cup -->
+  <circle cx="380" cy="280" r="20" fill="#8B4513"/>
+  <rect x="375" y="260" width="10" height="25" fill="#D2691E"/>
+  <ellipse cx="380" cy="260" rx="15" ry="8" fill="#F4A460"/>
+  
+  <!-- Plant -->
+  <rect x="80" y="270" width="15" height="40" fill="#8B4513"/>
+  <circle cx="87" cy="260" r="25" fill="#228B22"/>
+  <circle cx="95" cy="250" r="15" fill="#32CD32"/>
+  <circle cx="75" cy="255" r="18" fill="#228B22"/>
+  
+  <!-- Books -->
+  <rect x="420" y="280" width="60" height="8" fill="#FF6B6B"/>
+  <rect x="425" y="272" width="50" height="8" fill="#4ECDC4"/>
+  <rect x="430" y="264" width="40" height="8" fill="#45B7D1"/>
+  
+  <!-- Floating Elements -->
+  <circle cx="100" cy="100" r="8" fill="#7B6EF6" opacity="0.6"/>
+  <circle cx="400" cy="120" r="12" fill="#3BD671" opacity="0.4"/>
+  <rect x="350" y="80" width="16" height="16" rx="3" fill="#FF6B6B" opacity="0.5"/>
+  <polygon points="80,60 90,80 70,80" fill="#F39C12" opacity="0.6"/>
+  
+  <!-- Text "Fantinatto" -->
+  <text x="250" y="50" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1A3C56" text-anchor="middle">Fantinatto</text>
+  <text x="250" y="75" font-family="Arial, sans-serif" font-size="12" fill="#555555" text-anchor="middle">Full Stack Developer</text>
+</svg>

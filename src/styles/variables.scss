@@ -1,0 +1,19 @@
+// SASS Variables
+$primary-color: #1A3C56;
+$secundary-color: #3BD671;
+$acento-color: #7B6EF6;
+$background-color: #FAFBFC;
+$font-stack: 'Poppins';
+$text-color: #555555;
+$gray-bg: #F8F9FA;
+
+// CSS Custom Properties para compatibilidade global
+:root {
+  --primary-color: #{$primary-color};
+  --secundary-color: #{$secundary-color};
+  --acento-color: #{$acento-color};
+  --background-color: #{$background-color};
+  --font-stack: #{$font-stack};
+  --text-color: #{$text-color};
+  --gray-bg: #{$gray-bg};
+}

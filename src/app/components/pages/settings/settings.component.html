@@ -1,0 +1,859 @@
+<div class="settings-container">
+  <header class="settings-header">
+    <h1>Configurações</h1>
+    <p class="settings-subtitle">Gerencie integrações e preferências da sua conta</p>
+  </header>
+
+  <!-- Idioma -->
+  <section class="settings-card settings-card--lang">
+    <div class="card-header">
+      <div class="card-title-row">
+        <span class="lang-icon">🌐</span>
+        <div>
+          <h2>Idioma</h2>
+          <p class="card-description">Escolha o idioma exibido na interface.</p>
+        </div>
+      </div>
+    </div>
+    <div class="lang-switcher-wrapper">
+      <app-language-switcher></app-language-switcher>
+    </div>
+  </section>
+
+  <!-- Jornada de Trabalho -->
+  <section class="settings-card">
+    <div class="card-header">
+      <div class="card-title-row">
+        <span class="lang-icon">🗓️</span>
+        <div>
+          <h2>Jornada de Trabalho</h2>
+          <p class="card-description">Configure seus dias e horas de trabalho. Usados em cálculos de ponto e alertas.</p>
+        </div>
+      </div>
+    </div>
+
+    <app-loading-spinner *ngIf="workScheduleLoading"></app-loading-spinner>
+
+    <div *ngIf="!workScheduleLoading" class="work-schedule-body">
+      <div class="work-schedule-field">
+        <label class="work-schedule-label" for="wh-input">Horas por dia</label>
+        <div class="work-hours-input-wrap">
+          <input id="wh-input"
+                 type="number"
+                 class="work-hours-input"
+                 [(ngModel)]="workSchedule.workingHoursPerDay"
+                 min="1" max="24" step="0.5">
+          <span class="work-hours-unit">horas</span>
+        </div>
+      </div>
+
+      <div class="work-schedule-field">
+        <span class="work-schedule-label">Dias de trabalho</span>
+        <div class="work-days-grid">
+          <label *ngFor="let d of WEEK_DAYS" class="work-day-check"
+                 [class.work-day-check--active]="isWorkDay(d.value)">
+            <input type="checkbox"
+                   [checked]="isWorkDay(d.value)"
+                   (change)="toggleWorkDay(d.value)">
+            {{ d.label }}
+          </label>
+        </div>
+      </div>
+
+      <div class="work-schedule-actions">
+        <button class="btn-save" (click)="saveWorkSchedule()" [disabled]="workScheduleSaving">
+          {{ workScheduleSaving ? 'Salvando...' : 'Salvar jornada' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Azure DevOps -->
+  <section class="settings-card">
+    <div class="card-header">
+      <div class="card-title-row">
+        <svg class="provider-logo" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#0078D4" d="M0 180.2L96.6 32l73.8 85.1-45.7 63.1zM256 197.3L154.8 224 80.5 211.4l175.5-14.1zM96.6 32H256l-101.2 192L96.6 32z"/>
+        </svg>
+        <div>
+          <h2>Azure DevOps</h2>
+          <p class="card-description">
+            Conecte sua organização Azure DevOps para visualizar boards, sprints e work items diretamente no app.
+          </p>
+        </div>
+      </div>
+      <div class="card-status" [class.connected]="azureStatus?.connected && !azurePatExpired" [class.expired]="azurePatExpired">
+        <ng-container *ngIf="azureLoading">
+          <span class="status-dot loading"></span><span>Verificando...</span>
+        </ng-container>
+        <ng-container *ngIf="!azureLoading && azureStatus?.connected && azurePatExpired">
+          <span class="status-dot warn"></span><span>Token expirado</span>
+        </ng-container>
+        <ng-container *ngIf="!azureLoading && azureStatus?.connected && !azurePatExpired">
+          <span class="status-dot ok"></span><span>Conectado</span>
+        </ng-container>
+        <ng-container *ngIf="!azureLoading && !azureStatus?.connected">
+          <span class="status-dot off"></span><span>Não conectado</span>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="azureStatus?.connected" class="credential-info">
+      <div class="info-row">
+        <span class="info-label">Organização</span>
+        <span class="info-value">{{ azureStatus?.orgUrl }}</span>
+      </div>
+      <div class="info-row" *ngIf="azureStatus?.project">
+        <span class="info-label">Projeto</span>
+        <span class="info-value">{{ azureStatus?.project }}</span>
+      </div>
+      <div class="info-row" *ngIf="azureStatus?.azureDisplayName || azureStatus?.azureEmail">
+        <span class="info-label">Usuário Azure</span>
+        <span class="info-value">
+          {{ azureStatus?.azureDisplayName }}
+          <span *ngIf="azureStatus?.azureEmail" class="info-sub">{{ azureStatus?.azureEmail }}</span>
+        </span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Conectado em</span>
+        <span class="info-value">{{ formatDate(azureStatus?.connectedAt) }}</span>
+      </div>
+      <div class="info-row" *ngIf="azureStatus?.testedAt">
+        <span class="info-label">Último teste</span>
+        <span class="info-value">{{ formatDate(azureStatus?.testedAt) }}</span>
+      </div>
+      <div class="info-row" *ngIf="azureStatus?.patExpiresAt">
+        <span class="info-label">Token expira em</span>
+        <span class="info-value" [class.expired-text]="azurePatExpired">
+          {{ formatDate(azureStatus?.patExpiresAt) }}
+          <span *ngIf="azurePatExpired" class="badge-expired">Expirado</span>
+          <span *ngIf="!azurePatExpired && azurePatExpiringSoon" class="badge-warning">Expira em {{ azurePatDaysUntilExpiry }} dias</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!azureStatus?.connected" class="btn-connect" (click)="openAzureWizard()" [disabled]="azureLoading">
+        <svg viewBox="0 0 256 256" width="16" height="16"><path fill="currentColor" d="M0 180.2L96.6 32l73.8 85.1-45.7 63.1zM256 197.3L154.8 224 80.5 211.4l175.5-14.1zM96.6 32H256l-101.2 192L96.6 32z"/></svg>
+        Conectar com Azure DevOps
+      </button>
+      <ng-container *ngIf="azureStatus?.connected">
+        <button class="btn-reconnect" (click)="testAzureConnection()" [disabled]="azureTesting">
+          <span *ngIf="azureTesting">Testando...</span>
+          <span *ngIf="!azureTesting">Testar conexão</span>
+        </button>
+        <button class="btn-reconnect" (click)="openAzureWizard()" [disabled]="azureTesting || azureDisconnecting">
+          Alterar configuração
+        </button>
+        <button class="btn-disconnect" (click)="disconnectAzure()" [disabled]="azureDisconnecting">
+          <span *ngIf="azureDisconnecting">Removendo...</span>
+          <span *ngIf="!azureDisconnecting">Desconectar</span>
+        </button>
+      </ng-container>
+    </div>
+  </section>
+
+  <!-- SAP SolMan -->
+  <section class="settings-card">
+    <div class="card-header">
+      <div class="card-title-row">
+        <span style="font-size:1.5rem;line-height:1">🟠</span>
+        <div>
+          <h2>SAP SolMan</h2>
+          <p class="card-description">
+            Conecte ao SAP Solution Manager para visualizar chamados da sua fila e vinculá-los a atividades do board.
+          </p>
+        </div>
+      </div>
+      <div class="card-status" [class.connected]="solmanStatus?.connected && !solmanStatus?.credentialsInvalid" [class.expired]="solmanStatus?.credentialsInvalid">
+        <ng-container *ngIf="solmanLoading">
+          <span class="status-dot loading"></span><span>Verificando...</span>
+        </ng-container>
+        <ng-container *ngIf="!solmanLoading && solmanStatus?.connected && solmanStatus?.credentialsInvalid">
+          <span class="status-dot warn"></span><span>Credenciais inválidas</span>
+        </ng-container>
+        <ng-container *ngIf="!solmanLoading && solmanStatus?.connected && !solmanStatus?.credentialsInvalid">
+          <span class="status-dot ok"></span><span>Conectado</span>
+        </ng-container>
+        <ng-container *ngIf="!solmanLoading && !solmanStatus?.connected">
+          <span class="status-dot off"></span><span>Não conectado</span>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="solmanStatus?.connected && solmanStatus?.credentialsInvalid" class="alert-banner alert-banner--error">
+      ⚠ Credenciais inválidas. A senha ou usuário SAP pode ter expirado. Atualize a configuração para restaurar a conexão.
+    </div>
+
+    <div *ngIf="solmanStatus?.connected" class="credential-info">
+      <div class="info-row">
+        <span class="info-label">URL Base</span>
+        <span class="info-value">{{ solmanStatus?.baseUrl }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Usuário SAP</span>
+        <span class="info-value">{{ solmanStatus?.username }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Código BP</span>
+        <span class="info-value">{{ solmanStatus?.personRespCode }}</span>
+      </div>
+      <div class="info-row" *ngIf="solmanStatus?.testedAt">
+        <span class="info-label">Último teste</span>
+        <span class="info-value">{{ formatDate(solmanStatus?.testedAt) }}</span>
+      </div>
+    </div>
+
+    <!-- Formulário de conexão -->
+    <div *ngIf="solmanFormOpen" class="azure-wizard">
+      <div class="wizard-body">
+        <div class="form-group">
+          <label>URL Base do SolMan <span class="required">*</span></label>
+          <input type="url" class="form-control" [(ngModel)]="solmanBaseUrl" placeholder="http://sm.suaempresa.com">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>SAP Client</label>
+            <input type="text" class="form-control" [(ngModel)]="solmanSapClient" placeholder="100">
+          </div>
+          <div class="form-group">
+            <label>Código BP (PersonResp) <span class="required">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="solmanPersonRespCode" placeholder="Ex: 4836">
+            <small class="form-hint">Abra um chamado onde você é Processador, clique no seu nome e use o ID exibido.</small>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Usuário SAP <span class="required">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="solmanUsername" placeholder="seu.usuario">
+          </div>
+          <div class="form-group">
+            <label>Senha <span class="required">*</span></label>
+            <input type="password" class="form-control" [(ngModel)]="solmanPassword" placeholder="••••••••">
+          </div>
+        </div>
+      </div>
+      <div class="wizard-footer">
+        <button class="btn-cancel" type="button" (click)="solmanFormOpen = false">Cancelar</button>
+        <button class="btn-save" type="button" [disabled]="solmanSaving" (click)="saveSolMan()">
+          {{ solmanSaving ? 'Conectando...' : 'Conectar' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!solmanStatus?.connected" class="btn-connect" (click)="openSolManForm()" [disabled]="solmanLoading">
+        Conectar ao SAP SolMan
+      </button>
+      <ng-container *ngIf="solmanStatus?.connected">
+        <button class="btn-reconnect" (click)="testSolMan()" [disabled]="solmanTesting">
+          {{ solmanTesting ? 'Testando...' : 'Testar conexão' }}
+        </button>
+        <button class="btn-reconnect" (click)="openSolManForm()" [disabled]="solmanSaving || solmanDisconnecting">
+          Alterar configuração
+        </button>
+        <button class="btn-disconnect" (click)="disconnectSolMan()" [disabled]="solmanDisconnecting">
+          {{ solmanDisconnecting ? 'Removendo...' : 'Desconectar' }}
+        </button>
+      </ng-container>
+    </div>
+  </section>
+
+  <!-- Trello -->
+  <section class="settings-card">
+    <div class="card-header">
+      <div class="card-title-row">
+        <span style="display:inline-block;width:36px;height:36px;background:#0052cc;border-radius:8px;margin-top:2px;flex-shrink:0;"></span>
+        <div>
+          <h2>Trello</h2>
+          <p class="card-description">
+            Conecte ao Trello para visualizar seus cards e vinculá-los a atividades do board.
+          </p>
+        </div>
+      </div>
+      <div class="card-status" [class.connected]="trelloStatus?.connected && !trelloStatus?.credentialsInvalid" [class.expired]="trelloStatus?.credentialsInvalid">
+        <ng-container *ngIf="trelloLoading">
+          <span class="status-dot loading"></span><span>Verificando...</span>
+        </ng-container>
+        <ng-container *ngIf="!trelloLoading && trelloStatus?.connected && trelloStatus?.credentialsInvalid">
+          <span class="status-dot warn"></span><span>Credenciais inválidas</span>
+        </ng-container>
+        <ng-container *ngIf="!trelloLoading && trelloStatus?.connected && !trelloStatus?.credentialsInvalid">
+          <span class="status-dot ok"></span><span>Conectado</span>
+        </ng-container>
+        <ng-container *ngIf="!trelloLoading && !trelloStatus?.connected">
+          <span class="status-dot off"></span><span>Não conectado</span>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="trelloStatus?.connected && trelloStatus?.credentialsInvalid" class="alert-banner alert-banner--error">
+      ⚠ Credenciais inválidas. A API Key ou Token Trello pode ter expirado ou sido revogado. Atualize a configuração para restaurar a conexão.
+    </div>
+
+    <div *ngIf="trelloStatus?.connected" class="credential-info">
+      <div class="info-row">
+        <span class="info-label">Status</span>
+        <span class="info-value">Conectado</span>
+      </div>
+      <div class="info-row" *ngIf="trelloStatus?.testedAt">
+        <span class="info-label">Último teste</span>
+        <span class="info-value">{{ formatDate(trelloStatus?.testedAt) }}</span>
+      </div>
+      <div class="info-row" *ngIf="trelloStatus?.connectedAt">
+        <span class="info-label">Conectado em</span>
+        <span class="info-value">{{ formatDate(trelloStatus?.connectedAt) }}</span>
+      </div>
+      <div class="info-row" *ngIf="trelloStatus?.selectedBoardName">
+        <span class="info-label">Board ativo</span>
+        <span class="info-value">{{ trelloStatus?.selectedBoardName }}</span>
+      </div>
+    </div>
+
+    <!-- Board Config Panel -->
+    <div *ngIf="trelloStatus?.connected && trelloBoardConfigOpen" class="board-config-panel">
+      <h4 class="board-config-title">Configuração do Board</h4>
+
+      <div class="form-field">
+        <label class="field-label">Board</label>
+        <select
+          class="form-input"
+          [ngModel]="trelloSelectedBoardId"
+          (ngModelChange)="onTrelloBoardChange($event)"
+          [disabled]="trelloBoardLoading || trelloBoardSaving">
+          <option value="">{{ trelloBoardLoading ? 'Carregando...' : 'Selecione um board...' }}</option>
+          <option *ngFor="let b of trelloBoards" [value]="b.id">{{ b.name }}</option>
+        </select>
+      </div>
+
+      <ng-container *ngIf="trelloSelectedBoardId">
+        <div *ngIf="trelloListsLoading" class="board-config-loading">Carregando listas...</div>
+
+        <div *ngIf="!trelloListsLoading && trelloLists.length" class="list-mapping-table">
+          <div class="list-mapping-header">
+            <span>Lista do Trello</span>
+            <span>Status no app</span>
+          </div>
+          <div *ngFor="let list of trelloListMappings" class="list-mapping-row">
+            <span class="list-name">{{ list.listName }}</span>
+            <select
+              class="form-input form-input--sm"
+              [ngModel]="list.appStatus"
+              (ngModelChange)="setListMappingStatus(list.listId, $event)"
+              [disabled]="trelloBoardSaving">
+              <option *ngFor="let s of trelloAppStatuses" [ngValue]="s.value">{{ s.label }}</option>
+            </select>
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="board-config-actions">
+        <button class="btn-secondary" (click)="trelloBoardConfigOpen = false" [disabled]="trelloBoardSaving">Cancelar</button>
+        <button class="btn-connect" (click)="saveTrelloBoard()" [disabled]="trelloBoardSaving || !trelloSelectedBoardId">
+          <span *ngIf="trelloBoardSaving" class="spinner"></span>
+          {{ trelloBoardSaving ? 'Salvando...' : 'Salvar configuração' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Criação automática de cards -->
+    <div *ngIf="trelloStatus?.connected && !trelloStatus?.credentialsInvalid" class="trello-autocreate-section">
+      <div class="trello-autocreate-row">
+        <div class="trello-autocreate-info">
+          <span class="trello-autocreate-label">Criar cards automaticamente</span>
+          <span class="trello-autocreate-desc">Ao criar uma atividade ou tarefa no board, um card será criado no Trello na lista correspondente ao status</span>
+        </div>
+        <label class="toggle-switch" [class.toggle-switch--disabled]="trelloUpdatingSettings">
+          <input type="checkbox" [(ngModel)]="trelloAutoCreateCards" (change)="toggleTrelloAutoCreate()" [disabled]="trelloUpdatingSettings">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="trello-autocreate-actions">
+        <button class="btn-reconnect" (click)="createTrelloCards()"
+                [disabled]="trelloCreatingCards || !trelloStatus?.selectedBoardId">
+          <span *ngIf="trelloCreatingCards" class="spinner"></span>
+          {{ trelloCreatingCards ? 'Criando cards...' : '⊞ Criar cards para atividades e tarefas existentes' }}
+        </button>
+        <div *ngIf="trelloCreateCardsResult" class="trello-create-result">
+          <span *ngIf="trelloCreateCardsResult.activitiesCreated + trelloCreateCardsResult.tasksCreated > 0">
+            ✨ {{ trelloCreateCardsResult.activitiesCreated }} atividade(s) e {{ trelloCreateCardsResult.tasksCreated }} tarefa(s) criada(s)
+          </span>
+          <span *ngIf="trelloCreateCardsResult.activitiesCreated + trelloCreateCardsResult.tasksCreated === 0">
+            Nenhum card novo para criar
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!trelloStatus?.connected" class="btn-connect" (click)="openTrelloWizard()" [disabled]="trelloLoading">
+        Conectar ao Trello
+      </button>
+      <ng-container *ngIf="trelloStatus?.connected">
+        <button class="btn-reconnect" (click)="testTrello()" [disabled]="trelloTesting">
+          {{ trelloTesting ? 'Testando...' : 'Testar conexão' }}
+        </button>
+        <button class="btn-reconnect" (click)="openTrelloBoardConfig()" [disabled]="trelloBoardConfigOpen">
+          {{ trelloStatus?.selectedBoardId ? 'Reconfigurar board' : 'Configurar board' }}
+        </button>
+        <button class="btn-reconnect" (click)="openTrelloWizard()" [disabled]="trelloSaving || trelloDisconnecting">
+          Alterar credenciais
+        </button>
+        <button class="btn-disconnect" (click)="disconnectTrello()" [disabled]="trelloDisconnecting">
+          {{ trelloDisconnecting ? 'Removendo...' : 'Desconectar' }}
+        </button>
+      </ng-container>
+    </div>
+  </section>
+
+  <!-- Microsoft -->
+  <section class="settings-card">
+    <div class="card-header">
+      <div class="card-title-row">
+        <img src="/assets/svg/microsoft.svg" alt="Microsoft" class="provider-logo" />
+        <div>
+          <h2>Autenticação Microsoft</h2>
+          <p class="card-description">
+            Conecte sua conta Microsoft para que o sistema possa acessar APIs Microsoft
+            (Azure, Graph, Teams, etc.) em seu nome.
+          </p>
+        </div>
+      </div>
+      <div class="card-status" [class.connected]="status?.connected" [class.expired]="status?.isExpired">
+        <ng-container *ngIf="isLoading">
+          <span class="status-dot loading"></span><span>Verificando...</span>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && status?.connected && !status?.isExpired">
+          <span class="status-dot ok"></span><span>Conectado</span>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && status?.connected && status?.isExpired">
+          <span class="status-dot warn"></span><span>Token expirado</span>
+        </ng-container>
+        <ng-container *ngIf="!isLoading && !status?.connected">
+          <span class="status-dot off"></span><span>Não conectado</span>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="status?.connected" class="credential-info">
+      <div class="info-row">
+        <span class="info-label">Conta</span>
+        <span class="info-value">{{ status?.email || '-' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Conectado em</span>
+        <span class="info-value">{{ formatDate(status?.connectedAt) }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Última atualização</span>
+        <span class="info-value">{{ formatDate(status?.updatedAt) }}</span>
+      </div>
+      <div class="info-row" *ngIf="status?.expiresAt">
+        <span class="info-label">Expira em</span>
+        <span class="info-value" [class.expired-text]="status?.isExpired">
+          {{ formatDate(status?.expiresAt) }}
+          <span *ngIf="status?.isExpired" class="badge-expired">Expirado</span>
+        </span>
+      </div>
+      <div class="info-row" *ngIf="status?.scopes?.length">
+        <span class="info-label">Permissões</span>
+        <div class="scopes-list">
+          <span *ngFor="let scope of status?.scopes" class="scope-tag">{{ scope }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button *ngIf="!status?.connected || status?.isExpired" class="btn-connect" (click)="connectMicrosoft()" [disabled]="isLoading">
+        <img src="/assets/svg/microsoft.svg" alt="" class="btn-icon" />
+        {{ status?.isExpired ? 'Reconectar Microsoft' : 'Conectar Microsoft' }}
+      </button>
+      <ng-container *ngIf="status?.connected">
+        <button class="btn-reconnect" (click)="connectMicrosoft()" [disabled]="isLoading || isDisconnecting">Atualizar credenciais</button>
+        <button class="btn-disconnect" (click)="disconnect()" [disabled]="isDisconnecting">
+          <span *ngIf="isDisconnecting">Removendo...</span>
+          <span *ngIf="!isDisconnecting">Desconectar</span>
+        </button>
+      </ng-container>
+    </div>
+  </section>
+</div>
+
+<!-- ═══════════ MODAL AZURE DEVOPS WIZARD ═══════════ -->
+<div *ngIf="azureWizardStep > 0" class="modal-backdrop" (click)="closeAzureWizard()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-header-brand">
+        <svg viewBox="0 0 256 256" width="22" height="22"><path fill="#0078D4" d="M0 180.2L96.6 32l73.8 85.1-45.7 63.1zM256 197.3L154.8 224 80.5 211.4l175.5-14.1zM96.6 32H256l-101.2 192L96.6 32z"/></svg>
+        <span>Conectar Azure DevOps</span>
+      </div>
+      <button class="modal-close" (click)="closeAzureWizard()" [disabled]="azureSaving" aria-label="Fechar">✕</button>
+    </div>
+
+    <!-- Steps indicator -->
+    <div class="modal-steps">
+      <div class="modal-step" [class.active]="azureWizardStep === 1" [class.done]="azureWizardStep > 1">
+        <div class="step-bubble">
+          <svg *ngIf="azureWizardStep > 1" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span *ngIf="azureWizardStep <= 1">1</span>
+        </div>
+        <span class="step-label">URL do projeto</span>
+      </div>
+      <div class="step-line" [class.done]="azureWizardStep > 1"></div>
+      <div class="modal-step" [class.active]="azureWizardStep === 2" [class.done]="azureWizardStep > 2">
+        <div class="step-bubble">
+          <svg *ngIf="azureWizardStep > 2" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span *ngIf="azureWizardStep <= 2">2</span>
+        </div>
+        <span class="step-label">Criar token</span>
+      </div>
+      <div class="step-line" [class.done]="azureWizardStep > 2"></div>
+      <div class="modal-step" [class.active]="azureWizardStep === 3" [class.done]="azureWizardStep > 3">
+        <div class="step-bubble">
+          <svg *ngIf="azureWizardStep > 3" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span *ngIf="azureWizardStep <= 3">3</span>
+        </div>
+        <span class="step-label">Colar token</span>
+      </div>
+      <div class="step-line" [class.done]="azureWizardStep > 3"></div>
+      <div class="modal-step" [class.active]="azureWizardStep === 4">
+        <div class="step-bubble">4</div>
+        <span class="step-label">Seu e-mail</span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+
+      <!-- ETAPA 1: URL -->
+      <ng-container *ngIf="azureWizardStep === 1">
+        <h3 class="step-title">Cole a URL do seu projeto</h3>
+        <p class="step-desc">
+          Abra seu projeto no Azure DevOps, copie a URL do navegador e cole aqui.<br>
+          <code class="url-format">https://dev.azure.com/<em>organização</em>/<em>projeto</em></code>
+        </p>
+
+        <div class="form-field">
+          <label class="field-label">URL do projeto <span class="required">*</span></label>
+          <input
+            type="url"
+            [ngModel]="azureRawUrl"
+            (ngModelChange)="parseAzureUrl($event)"
+            placeholder="https://dev.azure.com/invoicecon/InvoiceConAgile"
+            class="form-input"
+            [disabled]="azureSaving" />
+        </div>
+
+        <div *ngIf="azureOrgSlug || azureProject" class="parsed-preview">
+          <div class="parsed-row">
+            <span class="parsed-key">Organização</span>
+            <span class="parsed-val" [class.empty]="!azureOrgSlug">{{ azureOrgSlug || '—' }}</span>
+          </div>
+          <div class="parsed-row">
+            <span class="parsed-key">Projeto</span>
+            <span class="parsed-val" [class.empty]="!azureProject">{{ azureProject || '—' }}</span>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ETAPA 2: Criar PAT -->
+      <ng-container *ngIf="azureWizardStep === 2">
+        <h3 class="step-title">Crie um Personal Access Token</h3>
+        <p class="step-desc">
+          Abra as configurações do Azure DevOps e crie um token com as permissões necessárias.
+        </p>
+
+        <a class="btn-open-azure" [href]="azurePatSettingsUrl" target="_blank" rel="noopener">
+          <svg viewBox="0 0 256 256" width="16" height="16"><path fill="#0078D4" d="M0 180.2L96.6 32l73.8 85.1-45.7 63.1zM256 197.3L154.8 224 80.5 211.4l175.5-14.1zM96.6 32H256l-101.2 192L96.6 32z"/></svg>
+          Abrir Azure DevOps → Configurações de Token
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+
+        <div class="inst-card">
+          <div class="inst-step-row">
+            <span class="inst-num">1</span>
+            <span>Clique em <strong>+ New Token</strong></span>
+          </div>
+          <div class="inst-step-row">
+            <span class="inst-num">2</span>
+            <div>
+              Preencha os campos:
+              <div class="inst-fields">
+                <div class="inst-field"><span class="field-key">Name</span><span class="field-val">fanti-up</span></div>
+                <div class="inst-field"><span class="field-key">Organization</span><span class="field-val">{{ azureOrgSlug || 'sua organização' }}</span></div>
+                <div class="inst-field"><span class="field-key">Expiration</span><span class="field-val">31/08/2026 (máx. 1 ano)</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="inst-step-row">
+            <span class="inst-num">3</span>
+            <div>
+              Em <strong>Scopes</strong>, escolha <strong>Custom defined</strong>:
+              <div class="scope-table">
+                <div class="scope-row scope-row--required">
+                  <span class="scope-name">Work Items</span>
+                  <span class="scope-badge required">Read &amp; Write</span>
+                </div>
+                <div class="scope-row scope-row--required">
+                  <span class="scope-name">Project and Team</span>
+                  <span class="scope-badge required">Read</span>
+                </div>
+                <div class="scope-row scope-row--required">
+                  <span class="scope-name">User Profile</span>
+                  <span class="scope-badge required">Read</span>
+                </div>
+                <div class="scope-row scope-row--optional">
+                  <span class="scope-name">Code</span>
+                  <span class="scope-badge optional">Read (opcional)</span>
+                </div>
+                <div class="scope-row scope-row--optional">
+                  <span class="scope-name">Build</span>
+                  <span class="scope-badge optional">Read (opcional)</span>
+                </div>
+                <div class="scope-row scope-row--optional">
+                  <span class="scope-name">Release</span>
+                  <span class="scope-badge optional">Read (opcional)</span>
+                </div>
+                <div class="scope-row scope-row--optional">
+                  <span class="scope-name">Test Management</span>
+                  <span class="scope-badge optional">Read (opcional)</span>
+                </div>
+              </div>
+              <div class="scope-writeback-note">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span><strong>Work Items: Read &amp; Write</strong> é necessário para o app atualizar status, datas e estimativas no Azure DevOps ao editar atividades e tarefas.</span>
+              </div>
+            </div>
+          </div>
+          <div class="inst-step-row">
+            <span class="inst-num">4</span>
+            <span>Clique em <strong>Create</strong> e <strong>copie o token</strong> — ele aparece apenas uma vez!</span>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ETAPA 3: Colar PAT -->
+      <ng-container *ngIf="azureWizardStep === 3">
+        <h3 class="step-title">Cole o token gerado</h3>
+        <p class="step-desc">
+          Cole o Personal Access Token abaixo. Vamos validar antes de salvar.
+        </p>
+
+        <div class="form-field">
+          <label class="field-label">Personal Access Token <span class="required">*</span></label>
+          <input
+            type="password"
+            [(ngModel)]="azurePat"
+            placeholder="Cole aqui o token gerado..."
+            class="form-input"
+            [disabled]="azureSaving" />
+        </div>
+
+        <div class="form-field">
+          <label class="field-label">Data de expiração <span class="optional">(opcional)</span></label>
+          <input
+            type="date"
+            [(ngModel)]="azurePatExpiresAt"
+            class="form-input"
+            [disabled]="azureSaving" />
+          <span class="field-hint">Informe a data de expiração definida ao criar o token para receber alertas de vencimento.</span>
+        </div>
+
+        <div class="url-preview-box">
+          <span class="url-preview-label">Projeto:</span>
+          <code>https://dev.azure.com/{{ azureOrgSlug }}/{{ azureProject }}</code>
+        </div>
+      </ng-container>
+
+      <!-- ETAPA 4: E-mail -->
+      <ng-container *ngIf="azureWizardStep === 4">
+        <h3 class="step-title">Informe seu e-mail do Azure DevOps</h3>
+        <p class="step-desc">
+          Usado para buscar os work items atribuídos a você. Deve ser o mesmo e-mail com que você acessa o Azure DevOps.
+        </p>
+
+        <div class="form-field">
+          <label class="field-label">E-mail <span class="required">*</span></label>
+          <input
+            type="email"
+            [(ngModel)]="azureUserEmail"
+            placeholder="seu@email.com"
+            class="form-input"
+            [disabled]="azureSaving" />
+        </div>
+
+        <div class="url-preview-box">
+          <span class="url-preview-label">Projeto:</span>
+          <code>https://dev.azure.com/{{ azureOrgSlug }}/{{ azureProject }}</code>
+        </div>
+      </ng-container>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="azureWizardStep === 1 ? closeAzureWizard() : wizardBack()" [disabled]="azureSaving">
+        {{ azureWizardStep === 1 ? 'Cancelar' : '← Voltar' }}
+      </button>
+      <div class="footer-right">
+        <span *ngIf="azureWizardStep === 2" class="step-skip" (click)="wizardNext()">
+          Já tenho o token →
+        </span>
+        <button *ngIf="azureWizardStep < 4" class="btn-connect" (click)="wizardNext()">
+          Próximo →
+        </button>
+        <button *ngIf="azureWizardStep === 4" class="btn-connect" (click)="saveAzureDevOps()" [disabled]="azureSaving">
+          <span *ngIf="azureSaving" class="spinner"></span>
+          <span>{{ azureSaving ? 'Validando...' : 'Salvar e conectar' }}</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ MODAL TRELLO WIZARD ═══════════ -->
+<div *ngIf="trelloWizardStep > 0" class="modal-backdrop" (click)="closeTrelloWizard()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-header-brand">
+        <span style="display:inline-block;width:22px;height:22px;background:#0052cc;border-radius:4px;"></span>
+        <span>Conectar Trello</span>
+      </div>
+      <button class="modal-close" (click)="closeTrelloWizard()" [disabled]="trelloSaving" aria-label="Fechar">✕</button>
+    </div>
+
+    <!-- Steps indicator -->
+    <div class="modal-steps">
+      <div class="modal-step" [class.active]="trelloWizardStep === 1" [class.done]="trelloWizardStep > 1">
+        <div class="step-bubble">
+          <svg *ngIf="trelloWizardStep > 1" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <span *ngIf="trelloWizardStep <= 1">1</span>
+        </div>
+        <span class="step-label">API Key</span>
+      </div>
+      <div class="step-line" [class.done]="trelloWizardStep > 1"></div>
+      <div class="modal-step" [class.active]="trelloWizardStep === 2">
+        <div class="step-bubble">2</div>
+        <span class="step-label">Token</span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+
+      <!-- ETAPA 1: API Key -->
+      <ng-container *ngIf="trelloWizardStep === 1">
+        <h3 class="step-title">Obtenha sua API Key</h3>
+        <p class="step-desc">
+          Acesse o Portal de Power-Ups do Trello, crie um app e copie a API Key.
+        </p>
+
+        <a class="btn-open-azure" href="https://trello.com/power-ups/admin" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0052cc" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="9" rx="1"/><rect x="13" y="7" width="3" height="5" rx="1"/></svg>
+          Abrir Power-Up Admin Portal
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+
+        <div class="inst-card">
+          <div class="inst-step-row">
+            <span class="inst-num">1</span>
+            <span>Clique em <strong>Create new Power-Up</strong> e preencha os campos:</span>
+          </div>
+          <div class="inst-fields" style="margin: 0.4rem 0 0.75rem 2rem">
+            <div class="inst-field"><span class="field-key">Name</span><span class="field-val">fanti-up</span></div>
+            <div class="inst-field"><span class="field-key">Workspace</span><span class="field-val">Seu workspace pessoal</span></div>
+            <div class="inst-field"><span class="field-key">Support contact</span><span class="field-val">Seu e-mail</span></div>
+            <div class="inst-field"><span class="field-key">Author</span><span class="field-val">Seu nome</span></div>
+            <div class="inst-field"><span class="field-key">Iframe connector URL</span><span class="field-val">https://finanti.app</span></div>
+          </div>
+          <div class="inst-step-row">
+            <span class="inst-num">2</span>
+            <span>Dentro do Power-Up criado, acesse a aba <strong>API key</strong></span>
+          </div>
+          <div class="inst-step-row">
+            <span class="inst-num">3</span>
+            <span>Copie a <strong>API Key</strong> exibida e cole abaixo</span>
+          </div>
+        </div>
+
+        <div class="form-field" style="margin-top:1.5rem">
+          <label class="field-label">API Key <span class="required">*</span></label>
+          <input
+            type="text"
+            [(ngModel)]="trelloApiKey"
+            placeholder="Cole aqui sua API Key..."
+            class="form-input"
+            [disabled]="trelloSaving" />
+        </div>
+      </ng-container>
+
+      <!-- ETAPA 2: Token -->
+      <ng-container *ngIf="trelloWizardStep === 2">
+        <h3 class="step-title">Autorize o acesso</h3>
+        <p class="step-desc">
+          Agora gere um Token de acesso para que o app possa ler seus cards.
+        </p>
+
+        <a class="btn-open-azure"
+           [class.disabled]="!trelloApiKey"
+           [href]="trelloApiKey ? trelloAuthUrl : null"
+           target="_blank" rel="noopener"
+           [style.pointer-events]="trelloApiKey ? 'auto' : 'none'"
+           [style.opacity]="trelloApiKey ? '1' : '0.5'">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0052cc" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="3" height="9" rx="1"/><rect x="13" y="7" width="3" height="5" rx="1"/></svg>
+          Abrir Trello → Autorizar acesso (Ou procure por link "Token" na página)
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+
+        <div class="inst-card">
+          <div class="inst-step-row">
+            <span class="inst-num">1</span>
+            <span>Clique no link acima (abre o Trello)</span>
+          </div>
+          <div class="inst-step-row">
+            <span class="inst-num">2</span>
+            <span>Clique em <strong>Permitir</strong> para autorizar o acesso</span>
+          </div>
+          <div class="inst-step-row">
+            <span class="inst-num">3</span>
+            <span>Copie o token exibido e cole abaixo</span>
+          </div>
+        </div>
+
+        <div class="form-field" style="margin-top:1.5rem">
+          <label class="field-label">Token <span class="required">*</span></label>
+          <input
+            type="password"
+            [(ngModel)]="trelloToken"
+            placeholder="Cole aqui o token gerado..."
+            class="form-input"
+            [disabled]="trelloSaving" />
+        </div>
+      </ng-container>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="trelloWizardStep === 1 ? closeTrelloWizard() : (trelloWizardStep = 1)" [disabled]="trelloSaving">
+        {{ trelloWizardStep === 1 ? 'Cancelar' : '← Voltar' }}
+      </button>
+      <div class="footer-right">
+        <button *ngIf="trelloWizardStep === 1" class="btn-connect" (click)="trelloWizardStep = 2" [disabled]="!trelloApiKey.trim()">
+          Próximo →
+        </button>
+        <button *ngIf="trelloWizardStep === 2" class="btn-connect" (click)="saveTrello()" [disabled]="trelloSaving || !trelloToken.trim()">
+          <span *ngIf="trelloSaving" class="spinner"></span>
+          <span>{{ trelloSaving ? 'Conectando...' : 'Salvar e conectar' }}</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
