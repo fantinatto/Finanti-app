@@ -1,0 +1,10 @@
+<div class="quote-banner" *ngIf="citacaoAtiva">
+  <span class="quote-banner__marca" aria-hidden="true">&ldquo;</span>
+  <div class="quote-banner__corpo">
+    <p class="quote-banner__texto">{{ citacaoAtiva.texto }}</p>
+    <span class="quote-banner__autor">
+      — <strong>{{ citacaoAtiva.autor }}</strong>
+      <small>({{ citacaoAtiva.obraOuFonte }})</small>
+    </span>
+  </div>
+</div>

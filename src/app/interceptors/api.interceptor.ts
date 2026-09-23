@@ -28,7 +28,7 @@ export class ApiInterceptor implements HttpInterceptor {
       return next.handle(req);
     }
 
-    const token = this.tokenCache || localStorage.getItem('auth-token');
+    const token = this.tokenCache || localStorage.getItem('finanti-token');
     if (!this.tokenCache && token) {
       this.tokenCache = token;
     }
@@ -84,9 +84,8 @@ export class ApiInterceptor implements HttpInterceptor {
               break;
             case 401:
               errorMessage = 'Não autorizado';
-              localStorage.removeItem('auth-token');
-              localStorage.removeItem('refresh-token');
-              localStorage.removeItem('app-user');
+              localStorage.removeItem('finanti-token');
+              localStorage.removeItem('finanti-user');
               this.tokenCache = null;
               break;
             case 403:

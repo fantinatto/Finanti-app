@@ -139,6 +139,88 @@
   /* Sem padding - os componentes gerenciam seu próprio espaçamento */
 }
 
+/* ===== Indicadores Fundamentalistas (dropdown na nav) ===== */
+.indicadores-menu-container {
+  position: relative;
+  display: flex;
+}
+
+.indicadores-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.indicadores-menu-chevron {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.indicadores-menu-chevron.open {
+  transform: rotate(180deg);
+}
+
+.indicadores-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1500;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.indicadores-menu-dropdown.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.indicadores-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.indicadores-menu-item:hover,
+.indicadores-menu-item.active {
+  background-color: var(--hover-bg);
+  color: var(--primary-color);
+}
+
+.indicadores-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1499;
+}
+
+.user-menu-subheader,
+.mobile-nav-subheader {
+  display: block;
+  padding: 0.6rem 1rem 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
 /* ===== Workspace Switcher ===== */
 .workspace-switcher {
   position: relative;
@@ -385,6 +467,48 @@
 .user-menu-item--signout:hover {
   background-color: #fef2f2;
   color: #dc2626;
+}
+
+.user-menu-info {
+  padding: 0.75rem 1rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.user-menu-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-menu-email {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-nav-user {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.75rem;
+}
+
+.mobile-nav-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.mobile-nav-email {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
 }
 
 .user-menu-divider {

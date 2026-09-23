@@ -1,0 +1,541 @@
+$primary: #1A3C56;
+$accent:  #22C55E;
+$border:  #e5e7eb;
+$radius:  12px;
+$muted:   #6b7280;
+
+.coleta-layout {
+  max-width: 100%;
+  padding: 2rem 1.5rem 4rem;
+  min-height: calc(100vh - 80px);
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+.coleta-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.coleta-title-group {
+  h1 { font-size: 1.5rem; font-weight: 700; color: $primary; margin: 0 0 0.3rem; }
+  p  { font-size: 0.875rem; color: $muted; margin: 0; }
+}
+
+.btn-sidebar-toggle {
+  display: none; // só aparece em mobile — desktop mostra a sidebar sempre
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: #fff;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $primary;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+// ── Layout: sidebar + conteúdo ──────────────────────────────────────────────────
+
+.coleta-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.coleta-main {
+  flex: 1;
+  min-width: 0; // permite a tabela fazer scroll horizontal sem esticar o pai
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+// ── Sidebar: competência, coleta e filtros ──────────────────────────────────────
+
+.coleta-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sidebar-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: $border;
+}
+
+.select-mes {
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  background: #fff;
+  width: 100%;
+  &:focus { border-color: $primary; }
+}
+
+.btn-coletar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: $primary;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  width: 100%;
+  transition: opacity 0.2s;
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Filtros de ingestão ───────────────────────────────────────────────────────
+
+.filtros-titulo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $muted;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+// ── Filtros fixos (sempre aplicados, informativo) ──────────────────────────────
+
+.filtros-fixos-aviso {
+  margin: 0.4rem 0 0.75rem;
+  font-size: 0.72rem;
+  color: $muted;
+  line-height: 1.5;
+}
+
+.filtro-fixo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+
+  &:last-child { margin-bottom: 0; }
+
+  &__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #92400e;
+  }
+
+  &__descricao {
+    font-size: 0.72rem;
+    color: #92400e;
+    opacity: 0.85;
+    line-height: 1.4;
+  }
+}
+
+.filtro-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: $primary;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+}
+
+.filtro-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.filtro-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: $muted;
+}
+
+.filtro-input {
+  padding: 0.45rem 0.75rem;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  width: 100%;
+  &:focus { border-color: $primary; }
+  &::placeholder { color: #d1d5db; }
+
+  &--sm { padding: 0.4rem 0.55rem; font-size: 0.8rem; }
+}
+
+// ── Filtros avançados ─────────────────────────────────────────────────────────
+
+.filtros-avancados-aviso {
+  margin: 0.6rem 0 0;
+  font-size: 0.72rem;
+  color: $muted;
+  line-height: 1.5;
+}
+
+.filtro-grupo-avancado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &__titulo {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid $border;
+    padding-bottom: 0.25rem;
+  }
+}
+
+.filtro-range {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__ate {
+    font-size: 0.72rem;
+    color: $muted;
+    flex-shrink: 0;
+  }
+}
+
+.btn-limpar-filtros {
+  align-self: flex-start;
+  padding: 0.35rem 0.7rem;
+  background: none;
+  border: 1.5px solid $border;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $muted;
+  cursor: pointer;
+
+  &:hover { border-color: $primary; color: $primary; }
+}
+
+// ── Resumo cards ─────────────────────────────────────────────────────────────
+
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.resumo-card {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.resumo-valor {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: $primary;
+  line-height: 1;
+}
+
+.resumo-label {
+  font-size: 0.78rem;
+  color: $muted;
+  font-weight: 500;
+}
+
+// ── Legenda fontes ────────────────────────────────────────────────────────────
+
+.legenda-fontes {
+  font-size: 0.78rem;
+  color: $muted;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.fonte-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  &--brapi  { background: #dbeafe; color: #1d4ed8; }
+  &--bolsai { background: #fef3c7; color: #92400e; }
+}
+
+// ── Estado ────────────────────────────────────────────────────────────────────
+
+.estado-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $muted;
+  font-size: 0.9rem;
+  padding: 3rem 0;
+  justify-content: center;
+}
+
+.estado-vazio {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: $muted;
+  &__icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; color: $primary; margin: 0 0 0.5rem; }
+  p  { font-size: 0.875rem; max-width: 360px; margin: 0 auto; line-height: 1.6; }
+}
+
+// ── Tabela ────────────────────────────────────────────────────────────────────
+
+.tabela-wrap {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  overflow: hidden;
+}
+
+.tabela-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid $border;
+  flex-wrap: wrap;
+}
+
+.tabela-count {
+  font-size: 0.78rem;
+  color: $muted;
+  white-space: nowrap;
+}
+
+.tabela-scroll {
+  overflow-x: auto;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.ind-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8fafc;
+    border-bottom: 2px solid $border;
+  }
+
+  th {
+    padding: 0.65rem 0.75rem;
+    text-align: right;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba($border, 0.6);
+    transition: background 0.1s;
+    &:last-child { border-bottom: none; }
+    &:hover { background: #f9fafb; }
+  }
+
+  td {
+    padding: 0.55rem 0.75rem;
+    text-align: right;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+}
+
+// ── Colunas fixas ─────────────────────────────────────────────────────────────
+
+.col-fixed {
+  position: sticky;
+  background: inherit;
+  z-index: 5;
+  text-align: left !important;
+}
+
+.col-ticker { left: 0; min-width: 80px; }
+.col-nome   { left: 80px; min-width: 180px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.col-setor  { left: 260px; min-width: 160px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; color: $muted; }
+
+.col-ind { min-width: 78px; }
+
+.col--bolsai {
+  background: rgba(245, 158, 11, 0.04);
+  th { color: #92400e; }
+}
+
+// ── Fonte dot ─────────────────────────────────────────────────────────────────
+
+.fonte-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 3px;
+  vertical-align: middle;
+  &--brapi  { background: #3b82f6; }
+  &--bolsai { background: #f59e0b; }
+}
+
+// ── Valores ───────────────────────────────────────────────────────────────────
+
+.ticker-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  background: rgba($primary, 0.07);
+  color: $primary;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+.val--ok   { color: #111; font-weight: 500; }
+.val--null { color: #d1d5db; }
+
+// ── Spinners ──────────────────────────────────────────────────────────────────
+
+.spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+
+  &--dark {
+    border-color: rgba($primary, 0.25);
+    border-top-color: $primary;
+  }
+}
+
+.spinner-lg {
+  width: 24px; height: 24px;
+  border: 2.5px solid $border;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .coleta-layout  { padding: 1rem 1rem 3rem; }
+  .coleta-header  { flex-direction: row; align-items: center; }
+  .resumo-grid    { grid-template-columns: repeat(2, 1fr); }
+  .col-nome       { display: none; }
+  .col-setor      { display: none; }
+
+  .btn-sidebar-toggle { display: inline-flex; }
+
+  .coleta-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 82vw);
+    max-height: none;
+    border-radius: 0;
+    z-index: 1600;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: 4px 0 16px rgba(0,0,0,.12);
+
+    &.open { transform: translateX(0); }
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    z-index: 1550;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner, .spinner-lg { animation: none !important; }
+}

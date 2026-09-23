@@ -1,0 +1,197 @@
+<div class="investimentos-layout">
+
+  <!-- ── Cabeçalho ──────────────────────────────────────────────────────────── -->
+  <div class="investimentos-header">
+    <div class="investimentos-title-group">
+      <h1>Meus Investimentos</h1>
+      <p>Cadastre suas posições reais (ações, FIIs e renda fixa) pra acompanhar o ganho mês a mês contra a cotação do ranking.</p>
+    </div>
+  </div>
+
+  <!-- ── Formulário ─────────────────────────────────────────────────────────── -->
+  <div class="form-card">
+    <h2 class="form-card__titulo">{{ editandoId ? 'Editar investimento' : 'Adicionar investimento' }}</h2>
+
+    <div class="form-grid">
+      <div class="campo">
+        <label>Tipo</label>
+        <select [(ngModel)]="form.tipo">
+          <option value="acao">Ação</option>
+          <option value="fii">FII</option>
+          <option value="renda_fixa">Renda Fixa</option>
+        </select>
+      </div>
+
+      <div class="campo" *ngIf="precisaTicker">
+        <label>Ticker</label>
+        <input type="text" [(ngModel)]="form.ticker" placeholder="Ex: PETR4" maxlength="10" />
+      </div>
+
+      <div class="campo campo--wide">
+        <label>Nome</label>
+        <input type="text" [(ngModel)]="form.nome" placeholder="Ex: Petrobras PN, ou 'Tesouro Selic 2029'" />
+      </div>
+
+      <div class="campo">
+        <label>Preço médio (R$)</label>
+        <input type="number" [(ngModel)]="form.precoMedio" min="0" step="0.01" placeholder="0,00" />
+      </div>
+
+      <div class="campo">
+        <label>Quantidade</label>
+        <input type="number" [(ngModel)]="form.quantidade" min="0" step="0.01" placeholder="0" />
+      </div>
+    </div>
+
+    <div class="form-acoes">
+      <button class="btn-secundario" *ngIf="editandoId" (click)="cancelarEdicao()">Cancelar</button>
+      <button class="btn-primario" [disabled]="!formValido || salvando" (click)="salvar()">
+        {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar alterações' : 'Adicionar') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Resumo + seletor de mês ────────────────────────────────────────────── -->
+  <div class="resumo-bar" *ngIf="investimentos.length">
+    <div class="resumo-bar__item">
+      <span class="resumo-bar__label">Investido</span>
+      <span class="resumo-bar__valor">{{ formatMoeda(valorInvestidoTotal) }}</span>
+    </div>
+    <div class="resumo-bar__item">
+      <span class="resumo-bar__label">Valor atual</span>
+      <span class="resumo-bar__valor">{{ formatMoeda(valorAtualTotal) }}</span>
+    </div>
+    <div class="resumo-bar__item">
+      <span class="resumo-bar__label">Ganho</span>
+      <span class="resumo-bar__valor" [ngClass]="classeGanho(ganhoTotal)">{{ formatMoeda(ganhoTotal) }}</span>
+    </div>
+
+    <div class="resumo-bar__mes">
+      <label>Competência</label>
+      <select [(ngModel)]="anoMesSelecionado" (ngModelChange)="onMesChange()" [disabled]="!meses.length">
+        <option *ngIf="!meses.length" value="">Sem dados</option>
+        <option *ngFor="let m of meses" [value]="m">{{ formatMes(m) }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────────────── -->
+  <div class="estado-loading" *ngIf="carregando">
+    <div class="spinner-lg"></div>
+    <span>Carregando investimentos...</span>
+  </div>
+
+  <!-- ── Empty state ────────────────────────────────────────────────────────── -->
+  <div class="estado-vazio" *ngIf="!carregando && !investimentos.length">
+    <div class="estado-vazio__icon">💼</div>
+    <h3>Nenhum investimento cadastrado</h3>
+    <p>Use o formulário acima pra registrar suas posições.</p>
+  </div>
+
+  <!-- ── Tabela ─────────────────────────────────────────────────────────────── -->
+  <div class="investimentos-table-wrap" *ngIf="!carregando && investimentos.length">
+    <table class="investimentos-table">
+      <thead>
+        <tr>
+          <th class="col-tipo">Tipo</th>
+          <th class="col-ticker">Ticker</th>
+          <th class="col-nome">Nome</th>
+          <th class="col-num">Preço médio</th>
+          <th class="col-num">Quantidade</th>
+          <th class="col-num">Cotação ({{ formatMes(anoMesSelecionado) }})</th>
+          <th class="col-num">Valor atual</th>
+          <th class="col-num">Ganho</th>
+          <th class="col-acoes"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let inv of investimentos">
+          <td class="col-tipo"><span class="tipo-badge" [ngClass]="'tipo-badge--' + inv.tipo">{{ labelTipo[inv.tipo] }}</span></td>
+          <td class="col-ticker">
+            <span class="ticker-badge" *ngIf="inv.ticker">{{ inv.ticker }}</span>
+            <span class="sem-ticker" *ngIf="!inv.ticker">—</span>
+          </td>
+          <td class="col-nome">{{ inv.nome }}</td>
+          <td class="col-num">{{ formatMoeda(inv.precoMedio) }}</td>
+          <td class="col-num">{{ inv.quantidade }}</td>
+          <td class="col-num" [attr.colspan]="naoNegociavel(inv) ? 3 : null">
+            <span class="aviso-nao-negociavel" *ngIf="naoNegociavel(inv); else cotacaoNormal" title="Ticker não retornou cotação na última coleta">
+              Esse ativo não está mais disponível para investimento
+            </span>
+            <ng-template #cotacaoNormal>{{ formatMoeda(ganhoDe(inv.id)?.cotacaoAtual ?? null) }}</ng-template>
+          </td>
+          <td class="col-num" *ngIf="!naoNegociavel(inv)">{{ formatMoeda(ganhoDe(inv.id)?.valorAtual ?? null) }}</td>
+          <td class="col-num" *ngIf="!naoNegociavel(inv)">
+            <span [ngClass]="classeGanho(ganhoDe(inv.id)?.ganho ?? null)">
+              {{ formatMoeda(ganhoDe(inv.id)?.ganho ?? null) }}
+              <small *ngIf="ganhoDe(inv.id)?.ganhoPercentual !== null">({{ formatPercentual(ganhoDe(inv.id)?.ganhoPercentual ?? null) }})</small>
+            </span>
+          </td>
+          <td class="col-acoes">
+            <button class="btn-icone" title="Editar" (click)="editar(inv)">✎</button>
+            <button class="btn-icone btn-icone--remover" title="Remover" [disabled]="removendoId === inv.id" (click)="remover(inv)">✕</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Ranking das ações da carteira + recomendações ──────────────────────── -->
+  <div class="ranking-carteira-card" *ngIf="!carregando && acoesInvestidas.length">
+    <h2 class="ranking-carteira-card__titulo">Ranking das suas ações</h2>
+    <p class="ranking-carteira-card__aviso">
+      Score do mês selecionado pra cada ação da carteira. Sugestões de troca comparam com o resto do setor;
+      sugestões de rebalanceamento comparam a alocação real do setor contra o alvo configurado em
+      <a routerLink="/carteira">Carteira</a>.
+    </p>
+
+    <div class="estado-loading" *ngIf="carregandoRecomendacoes">
+      <div class="spinner-lg"></div>
+      <span>Calculando recomendações...</span>
+    </div>
+
+    <div class="ranking-carteira-table-wrap" *ngIf="!carregandoRecomendacoes">
+      <table class="ranking-carteira-table">
+        <thead>
+          <tr>
+            <th class="col-ticker">Ticker</th>
+            <th class="col-nome">Nome</th>
+            <th class="col-setor">Setor</th>
+            <th class="col-num">Final</th>
+            <th class="col-num">Qualidade</th>
+            <th class="col-num">Risco</th>
+            <th class="col-num">Preço</th>
+            <th class="col-recomendacao">Recomendação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inv of acoesInvestidas">
+            <td class="col-ticker"><span class="ticker-badge">{{ inv.ticker }}</span></td>
+            <td class="col-nome">{{ inv.nome }}</td>
+            <td class="col-setor">{{ recomendacaoDe(inv.id)?.setor ?? '—' }}</td>
+            <td class="col-num">
+              <span class="score-badge" [ngClass]="scoreClass(recomendacaoDe(inv.id)?.scoreFinal ?? null)">
+                {{ formatScore(recomendacaoDe(inv.id)?.scoreFinal ?? null) }}
+              </span>
+            </td>
+            <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scoreQualidade ?? null) }}</td>
+            <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scoreRisco ?? null) }}</td>
+            <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scorePreco ?? null) }}</td>
+            <td class="col-recomendacao" *ngIf="recomendacaoDe(inv.id) as rec">
+              <span class="recomendacao-vazia" *ngIf="rec.categoriaAcao === 'manter'">—</span>
+
+              <div class="recomendacao-pill" [ngClass]="categoriaClasse(rec.categoriaAcao)" *ngIf="rec.categoriaAcao !== 'manter'" [title]="rec.motivoTroca ?? ''">
+                <span class="recomendacao-pill__tag">{{ categoriaLabel(rec.categoriaAcao) }}</span>
+                <span class="recomendacao-pill__texto">
+                  {{ textoRecomendacao(rec) }}
+                  <span class="recomendacao-pill__delta" *ngIf="rec.deltaScoreTroca !== null">{{ deltaScoreLabel(rec.deltaScoreTroca) }}</span>
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

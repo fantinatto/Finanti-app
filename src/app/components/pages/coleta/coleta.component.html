@@ -1,0 +1,187 @@
+<div class="coleta-layout">
+
+  <!-- ── Cabeçalho ──────────────────────────────────────────────────────────── -->
+  <div class="coleta-header">
+    <div class="coleta-title-group">
+      <h1>Coleta de Dados B3</h1>
+      <p>Indicadores fundamentalistas por ação, obtidos via brapi.dev e armazenados por competência.</p>
+    </div>
+    <button class="btn-sidebar-toggle" (click)="sidebarAberta = !sidebarAberta" [attr.aria-expanded]="sidebarAberta">
+      <span>{{ sidebarAberta ? 'Fechar' : 'Coleta e filtros' }}</span>
+    </button>
+  </div>
+
+  <div class="coleta-body">
+
+    <!-- ── Sidebar: competência, coleta e filtros ─────────────────────────────── -->
+    <aside class="coleta-sidebar" [class.open]="sidebarAberta">
+
+      <div class="sidebar-section">
+        <label class="sidebar-label" for="selectMes">Competência</label>
+        <select id="selectMes" [(ngModel)]="anoMesSelecionado" (ngModelChange)="carregarDados()" class="select-mes">
+          <option *ngIf="!meses.length" value="">Sem dados</option>
+          <option *ngFor="let m of meses" [value]="m">{{ formatMes(m) }}</option>
+        </select>
+      </div>
+
+      <button class="btn-coletar" (click)="dispararIngestion()" [disabled]="ingerindo || carregando">
+        <span *ngIf="ingerindo" class="spinner"></span>
+        {{ ingerindo ? 'Coletando...' : '↓ Iniciar Coleta' }}
+      </button>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section" *ngIf="filtrosFixos.length">
+        <div class="filtros-titulo">Filtros sempre aplicados</div>
+        <p class="filtros-fixos-aviso">Rodam em toda coleta, sem exceção — não são opcionais.</p>
+        <div class="filtro-fixo" *ngFor="let fixo of filtrosFixos">
+          <span class="filtro-fixo__label">{{ fixo.label }}</span>
+          <span class="filtro-fixo__descricao">{{ fixo.descricao }}</span>
+        </div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section">
+        <div class="filtros-titulo">Filtros de coleta</div>
+
+        <label class="filtro-check">
+          <input type="checkbox" [(ngModel)]="filtroIngestion.soAcoes" />
+          <span>Só ações (3, 4, 5, 6)</span>
+        </label>
+        <label class="filtro-check">
+          <input type="checkbox" [(ngModel)]="filtroIngestion.excluirFiis" />
+          <span>Excluir FIIs (terminam em 11)</span>
+        </label>
+        <label class="filtro-check">
+          <input type="checkbox" [(ngModel)]="filtroIngestion.excluirBdrs" />
+          <span>Excluir BDRs (terminam em 32–35)</span>
+        </label>
+
+        <div class="filtro-field">
+          <label class="filtro-label">Setor</label>
+          <input type="text" class="filtro-input" placeholder="Ex: Financeiro" [(ngModel)]="filtroIngestion.setor" />
+        </div>
+        <div class="filtro-field">
+          <label class="filtro-label">Market cap mínimo (R$)</label>
+          <input type="number" class="filtro-input" placeholder="Ex: 1000000000" [(ngModel)]="filtroIngestion.marketCapMin" min="0" />
+        </div>
+
+        <p class="filtros-avancados-aviso">
+          Faixas min/max espelhando a busca avançada da Status Invest. Um campo sem dado pra ação a exclui da coleta.
+          DY, ROE e Margem Líquida já vêm com um mínimo de segurança pré-preenchido — ajuste ou limpe se quiser.
+        </p>
+
+        <div class="filtro-grupo-avancado" *ngFor="let grupo of filtrosAvancadosPorGrupo; trackBy: trackByGrupo">
+          <div class="filtro-grupo-avancado__titulo">{{ grupo.label }}</div>
+
+          <div class="filtro-range" *ngFor="let campo of grupo.campos; trackBy: trackByCampo">
+            <label class="filtro-label">{{ campo.label }}</label>
+            <div class="filtro-range__inputs">
+              <input type="number" class="filtro-input filtro-input--sm" placeholder="mín" [(ngModel)]="rangesInput[campo.campo].min" />
+              <span class="filtro-range__ate">até</span>
+              <input type="number" class="filtro-input filtro-input--sm" placeholder="máx" [(ngModel)]="rangesInput[campo.campo].max" />
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-limpar-filtros" *ngIf="qtdFiltrosAvancadosAtivos" (click)="limparFiltrosAvancados()">
+          Limpar filtros avançados ({{ qtdFiltrosAvancadosAtivos }})
+        </button>
+      </div>
+
+    </aside>
+
+    <div class="sidebar-backdrop" *ngIf="sidebarAberta" (click)="sidebarAberta = false"></div>
+
+    <!-- ── Conteúdo principal ──────────────────────────────────────────────────── -->
+    <div class="coleta-main">
+
+      <!-- ── Cards de resumo ──────────────────────────────────────────────────── -->
+      <div class="resumo-grid" *ngIf="resumo">
+        <div class="resumo-card">
+          <span class="resumo-valor">{{ resumo.total }}</span>
+          <span class="resumo-label">Ações coletadas</span>
+        </div>
+        <div class="resumo-card">
+          <span class="resumo-valor">{{ resumo.comPl }}</span>
+          <span class="resumo-label">Com P/L</span>
+        </div>
+        <div class="resumo-card">
+          <span class="resumo-valor">{{ resumo.comRoe }}</span>
+          <span class="resumo-label">Com ROE</span>
+        </div>
+        <div class="resumo-card">
+          <span class="resumo-valor">{{ resumo.comDy }}</span>
+          <span class="resumo-label">Com DY</span>
+        </div>
+      </div>
+
+      <!-- ── Legenda de fontes ───────────────────────────────────────────────────── -->
+      <div class="legenda-fontes">
+        <span class="fonte-badge fonte-badge--brapi">brapi.dev</span> campos já coletados &nbsp;
+        <span class="fonte-badge fonte-badge--bolsai">bolsai</span> campos pendentes (fase 2) &nbsp;
+        <span class="val--null">—</span> valor não disponível para esta ação
+      </div>
+
+      <!-- ── Loading / Empty ────────────────────────────────────────────────────── -->
+      <div class="estado-loading" *ngIf="carregando">
+        <div class="spinner-lg"></div>
+        <span>Carregando indicadores...</span>
+      </div>
+
+      <div class="estado-vazio" *ngIf="!carregando && !indicadores.length && anoMesSelecionado">
+        <div class="estado-vazio__icon">📡</div>
+        <h3>Nenhuma coleta realizada</h3>
+        <p>Clique em <strong>"Iniciar Coleta"</strong> para buscar os dados da B3 via brapi.dev.</p>
+      </div>
+
+      <div class="estado-vazio" *ngIf="!carregando && !anoMesSelecionado && !ingerindo">
+        <div class="estado-vazio__icon">📡</div>
+        <h3>Aguardando primeira coleta</h3>
+        <p>Clique em <strong>"Iniciar Coleta"</strong> para começar.</p>
+      </div>
+
+      <!-- ── Tabela de indicadores ──────────────────────────────────────────────── -->
+      <div class="tabela-wrap" *ngIf="!carregando && indicadores.length">
+
+        <div class="tabela-toolbar">
+          <span class="tabela-count">{{ indicadores.length }} ações</span>
+        </div>
+
+        <div class="tabela-scroll">
+          <table class="ind-table">
+            <thead>
+              <tr>
+                <th class="col-fixed col-ticker">Ticker</th>
+                <th class="col-fixed col-nome">Nome</th>
+                <th class="col-fixed col-setor">Setor</th>
+                <th *ngFor="let col of colunas" [class]="'col-ind ' + classeColuna(col.fonte)" [title]="col.descricao">
+                  {{ col.label }}
+                  <span class="fonte-dot" [class]="'fonte-dot--' + col.fonte" [title]="col.fonte"></span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of indicadores">
+                <td class="col-fixed col-ticker">
+                  <span class="ticker-badge">{{ item.ticker }}</span>
+                </td>
+                <td class="col-fixed col-nome" [title]="item.acao.nome">{{ item.acao.nome }}</td>
+                <td class="col-fixed col-setor" [title]="item.acao.setor ?? ''">{{ item.acao.setor ?? '—' }}</td>
+                <td *ngFor="let col of colunas" class="col-ind" [class.col--bolsai]="col.fonte === 'bolsai'">
+                  <span [class]="classeValor(getValor(item, col.campo))">
+                    {{ formatValor(getValor(item, col.campo), col.campo) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

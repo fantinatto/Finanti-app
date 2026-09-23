@@ -1,0 +1,499 @@
+$primary:  #1A3C56;
+$accent:   #22C55E;
+$border:   #e5e7eb;
+$radius:   12px;
+$muted:    #6b7280;
+
+.resumo-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  min-height: calc(100vh - 80px);
+}
+
+.resumo-header {
+  margin-bottom: 1.75rem;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.3rem;
+  }
+  p {
+    font-size: 0.875rem;
+    color: $muted;
+    margin: 0;
+  }
+}
+
+.filtros-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  flex-wrap: wrap;
+}
+
+.filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  select {
+    padding: 0.45rem 0.75rem;
+    border: 1.5px solid $border;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #111;
+    outline: none;
+    cursor: pointer;
+    min-width: 160px;
+    background: #fff;
+    &:disabled { background: #f9fafb; color: $muted; cursor: not-allowed; }
+  }
+}
+
+.toggle-tabs {
+  display: flex;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+
+  button {
+    flex: 1;
+    padding: 0.45rem 1rem;
+    border: none;
+    background: #fff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $muted;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:first-child { border-right: 1px solid $border; }
+
+    &.active {
+      background: $primary;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    &:not(.active):hover { background: #f3f4f6; }
+  }
+}
+
+.estado-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $muted;
+  font-size: 0.9rem;
+  padding: 3rem 0;
+  justify-content: center;
+}
+
+.estado-vazio {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: $muted;
+
+  &__icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $primary;
+    margin: 0 0 0.5rem;
+  }
+
+  p {
+    font-size: 0.875rem;
+    max-width: 360px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+}
+
+// ── Gráfico comparativo ───────────────────────────────────────────────────────
+
+.chart-card {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  padding: 1.25rem 1.5rem 1.5rem;
+  margin-bottom: 1.75rem;
+
+  &__titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.25rem;
+  }
+
+  &__legenda {
+    font-size: 0.8rem;
+    color: $muted;
+    margin: 0 0 1.25rem;
+  }
+}
+
+.chart-legenda {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #374151; // legenda usa token de texto, nunca a cor da série
+  }
+
+  &__swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; // surface gap entre barras adjacentes
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 52px;
+  align-items: center;
+  gap: 0.75rem;
+
+  &__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.15s;
+  }
+
+  &__track {
+    position: relative;
+    height: 18px; // <= 24px, mark spec
+    background: #f3f4f6; // gridline recessivo
+    border-radius: 0 4px 4px 0;
+  }
+
+  &__fill {
+    display: flex;
+    height: 100%;
+    // 4px arredondado na ponta (direita), reto na base (esquerda, x=0) — overflow:hidden
+    // clipa os segmentos nesse formato, então não precisa saber qual é "o último".
+    border-radius: 0 4px 4px 0;
+    overflow: hidden;
+    min-width: 3px;
+    transition: width 0.4s ease;
+  }
+
+  &__segmento {
+    height: 100%;
+    box-sizing: border-box;
+    min-width: 1px;
+    transition: filter 0.15s;
+    outline-offset: -2px;
+
+    // gap de superfície entre segmentos (não no último, que encosta na ponta arredondada)
+    &:not(:last-child) { border-right: 2px solid #fff; }
+
+    &:hover, &:focus-visible {
+      filter: brightness(1.1);
+    }
+  }
+
+  &:hover &__label { color: $primary; }
+
+  &__valor {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: $primary;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ── Histórico do ranking (gráfico de linha) ─────────────────────────────────────
+
+.linha-chart-wrap {
+  position: relative;
+}
+
+.linha-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+
+  &__grid {
+    stroke: #e1e0d9; // gridline hairline, recessivo (references/palette.md)
+    stroke-width: 1;
+  }
+
+  &__eixo-label {
+    font-size: 9px;
+    fill: #898781; // muted — texto nunca herda cor de série
+    font-family: inherit;
+  }
+
+  &__ponto {
+    cursor: pointer;
+    transition: r 0.1s;
+    outline: none;
+
+    &:hover, &:focus-visible {
+      r: 6;
+    }
+  }
+}
+
+.linha-chart__tooltip {
+  position: absolute;
+  transform: translate(-50%, -130%);
+  background: $primary;
+  color: #fff;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  z-index: 2;
+
+  strong {
+    display: block;
+    font-size: 0.74rem;
+  }
+}
+
+.btn-tabela-toggle {
+  margin-top: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  background: #fff;
+  border: 1.5px solid $border;
+  border-radius: 7px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: $muted;
+  cursor: pointer;
+
+  &:hover { background: #f9fafb; color: $primary; border-color: $primary; }
+}
+
+.linha-chart-tabela-wrap {
+  margin-top: 0.85rem;
+  overflow-x: auto;
+  border: 1px solid $border;
+  border-radius: 8px;
+}
+
+.linha-chart-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  white-space: nowrap;
+
+  th, td {
+    padding: 0.5rem 0.75rem;
+    text-align: right;
+  }
+
+  th {
+    background: #f8fafc;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    &:first-child { text-align: left; }
+  }
+
+  td { font-variant-numeric: tabular-nums; }
+
+  &__grupo {
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  tbody tr {
+    border-top: 1px solid $border;
+    &:hover { background: #f9fafb; }
+  }
+}
+
+// ── Seção de setor (agrupa segmentos) ───────────────────────────────────────────
+
+.setor-secao {
+  margin-bottom: 2rem;
+
+  &:last-child { margin-bottom: 0; }
+
+  &__titulo {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid rgba($accent, 0.35);
+  }
+}
+
+// ── Grid de cards ─────────────────────────────────────────────────────────────
+
+.grupos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.grupo-card {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  padding: 1.1rem 1.25rem;
+
+  &__titulo {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.85rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid $border;
+  }
+
+  &__vazio {
+    font-size: 0.82rem;
+    color: $muted;
+    font-style: italic;
+  }
+}
+
+.top3-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.top3-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.posicao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #f3f4f6;
+  color: $muted;
+  flex-shrink: 0;
+
+  &--top {
+    background: rgba($accent, 0.12);
+    color: darken($accent, 15%);
+  }
+}
+
+.ticker-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  background: rgba($primary, 0.07);
+  color: $primary;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: monospace;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.top3-nome {
+  flex: 1;
+  font-size: 0.8rem;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 42px;
+  text-align: center;
+  flex-shrink: 0;
+
+  &.score--alto  { background: #dcfce7; color: #15803d; }
+  &.score--medio { background: #fef9c3; color: #92400e; }
+  &.score--baixo { background: #fee2e2; color: #b91c1c; }
+  &.score--vazio { background: #f3f4f6; color: #9ca3af; }
+}
+
+.spinner-lg {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid $border;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .resumo-layout { padding: 1rem 1rem 3rem; }
+  .filtros-bar { flex-direction: column; gap: 0.75rem; padding: 1rem; }
+  .filtro-grupo select { min-width: unset; width: 100%; }
+  .grupos-grid { grid-template-columns: 1fr; }
+  .chart-card { padding: 1rem; }
+  .bar-row { grid-template-columns: 110px 1fr 44px; gap: 0.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-lg { animation: none !important; }
+}

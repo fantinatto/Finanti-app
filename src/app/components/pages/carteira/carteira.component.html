@@ -1,0 +1,155 @@
+<div class="carteira-layout">
+
+  <div class="carteira-header">
+    <h1>Carteira de Investimentos</h1>
+    <p>Defina como você quer balancear sua carteira e use as regras de rebalanceamento como ponto de partida — os percentuais continuam editáveis depois de aplicar uma sugestão.</p>
+  </div>
+
+  <app-quote-banner contexto="GERAL_CARTEIRA"></app-quote-banner>
+
+  <div class="estado-loading" *ngIf="carregando">
+    <div class="spinner-lg"></div>
+    <span>Carregando...</span>
+  </div>
+
+  <ng-container *ngIf="!carregando">
+
+    <div class="aviso-nascimento" *ngIf="!temDataNascimento">
+      Cadastre sua <strong>data de nascimento</strong> em
+      <a routerLink="/account/settings">Configurações</a> pra poder usar as regras de rebalanceamento por idade.
+    </div>
+
+    <!-- ── Regras de rebalanceamento ──────────────────────────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">Regra sugerida</h2>
+      <p class="card__legenda" *ngIf="idade !== null">Sua idade: <strong>{{ idade }} anos</strong></p>
+
+      <div class="regra-chips">
+        <button
+          type="button"
+          class="chip"
+          *ngFor="let base of basesPadrao"
+          [class.active]="regraSelecionada === ('base' + base)"
+          [disabled]="!temDataNascimento || aplicandoSugestao"
+          (click)="aplicarRegra(base)"
+        >Regra dos {{ base }}</button>
+
+        <button type="button" class="chip" [class.active]="regraSelecionada === null" (click)="usarManual()">Manual</button>
+      </div>
+
+      <div class="regra-custom">
+        <label class="toggle-juros">
+          <input type="checkbox" [(ngModel)]="ajustarPorJuros" name="ajustarPorJuros" (ngModelChange)="onToggleJuros()" />
+          Ajustar pela taxa de juros (DI1F35) — quanto maior o juro, menos renda variável
+        </label>
+
+        <div class="base-custom-row">
+          <label for="baseCustom">Base customizada</label>
+          <input id="baseCustom" type="number" min="0" max="200" [(ngModel)]="baseCustomInput" name="baseCustom" placeholder="ex: 90" />
+          <button type="button" class="btn-secundario" [disabled]="!temDataNascimento || baseCustomInput === null || aplicandoSugestao" (click)="aplicarBaseCustom()">Aplicar</button>
+        </div>
+      </div>
+
+      <p class="sugestao-info" *ngIf="sugestaoInfo">{{ sugestaoInfo }}</p>
+      <p class="msg-erro" *ngIf="erroSugestao">{{ erroSugestao }}</p>
+    </div>
+
+    <!-- ── Renda Fixa x Renda Variável ─────────────────────────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">Renda Fixa × Renda Variável</h2>
+
+      <div class="slider-row">
+        <label for="rendaFixa">Renda Fixa</label>
+        <input id="rendaFixa" type="range" min="0" max="100" step="1" [(ngModel)]="percentualRendaFixa" name="percentualRendaFixa" />
+        <span class="slider-valor">{{ percentualRendaFixa }}%</span>
+      </div>
+      <p class="derivado">Renda Variável: <strong>{{ 100 - percentualRendaFixa }}%</strong></p>
+    </div>
+
+    <!-- ── FIIs x Ações (dentro de Renda Variável) ─────────────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">FIIs × Ações <span class="card__sub">(dentro de Renda Variável)</span></h2>
+
+      <div class="slider-row">
+        <label for="fiis">FIIs</label>
+        <input id="fiis" type="range" min="0" max="100" step="1" [(ngModel)]="percentualFiis" name="percentualFiis" />
+        <span class="slider-valor">{{ percentualFiis }}%</span>
+      </div>
+      <div class="slider-row">
+        <label for="acoes">Ações</label>
+        <input id="acoes" type="range" min="0" max="100" step="1" [(ngModel)]="percentualAcoes" name="percentualAcoes" />
+        <span class="slider-valor">{{ percentualAcoes }}%</span>
+      </div>
+      <p class="soma-aviso" [class.soma-aviso--ok]="somaFiisAcoes === 100">Soma: {{ somaFiisAcoes }}% (ideal: 100%)</p>
+    </div>
+
+    <!-- ── Alocação por Setor (dentro de Ações) ────────────────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">Alocação por Setor <span class="card__sub">(dentro de Ações)</span></h2>
+
+      <div class="estado-vazio-inline" *ngIf="!alocacoesSetor.length">
+        Rode uma ingestão em Coleta de Dados pra ter setores disponíveis aqui.
+      </div>
+
+      <div class="alocacao-row" *ngFor="let a of alocacoesSetor">
+        <span class="alocacao-nome" [title]="a.nome">{{ a.nome }}</span>
+        <input type="number" min="0" max="100" [(ngModel)]="a.percentual" [name]="'setor-' + a.nome" />
+        <span class="alocacao-pct">%</span>
+      </div>
+
+      <p class="soma-aviso" *ngIf="alocacoesSetor.length" [class.soma-aviso--ok]="somaAlocacoesSetor === 100">Soma: {{ somaAlocacoesSetor }}% (ideal: 100%)</p>
+    </div>
+
+    <!-- ── Alocação por Segmento de FII (dentro de FIIs) ───────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">Alocação por Segmento de FII <span class="card__sub">(dentro de FIIs)</span></h2>
+      <p class="card__legenda">Lista provisória — dados reais de fundamentos de FIIs chegam em breve.</p>
+
+      <div class="alocacao-row" *ngFor="let a of alocacoesSegmentoFii">
+        <span class="alocacao-nome">{{ a.nome }}</span>
+        <input type="number" min="0" max="100" [(ngModel)]="a.percentual" [name]="'fii-' + a.nome" />
+        <span class="alocacao-pct">%</span>
+      </div>
+
+      <p class="soma-aviso" [class.soma-aviso--ok]="somaAlocacoesSegmentoFii === 100">Soma: {{ somaAlocacoesSegmentoFii }}% (ideal: 100%)</p>
+    </div>
+
+    <!-- ── Estouro de balanceamento ─────────────────────────────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">% de estouro do balanceamento</h2>
+      <p class="card__legenda">Quanto a carteira real pode se desviar do alvo antes de indicar compra/venda de rebalanceamento.</p>
+      <div class="slider-row">
+        <label for="estouro">Estouro</label>
+        <input id="estouro" type="range" min="0" max="30" step="0.5" [(ngModel)]="percentualEstouro" name="percentualEstouro" />
+        <span class="slider-valor">{{ percentualEstouro }}%</span>
+      </div>
+    </div>
+
+    <!-- ── Ranking usado nas recomendações de Investimentos ────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">Ranking usado nas recomendações</h2>
+      <p class="card__legenda">Define qual ranking a tela de Investimentos usa pra escolher o "melhor ticker" nas sugestões de troca/aporte. Não afeta o rebalanceamento por valor, que continua sempre por Setor.</p>
+
+      <div class="regra-chips">
+        <button
+          type="button"
+          class="chip"
+          *ngFor="let opcao of opcoesRankingRecomendacao"
+          [class.active]="tipoRankingRecomendacao === opcao.valor"
+          [title]="opcao.descricao"
+          (click)="tipoRankingRecomendacao = opcao.valor"
+        >{{ opcao.label }}</button>
+      </div>
+
+      <p class="derivado">{{ descricaoRankingRecomendacao }}</p>
+    </div>
+
+    <div class="acoes-salvar">
+      <button type="button" class="btn-salvar" [disabled]="salvando" (click)="salvar()">{{ salvando ? 'Salvando...' : 'Salvar carteira' }}</button>
+      <span class="msg-sucesso" *ngIf="salvoComSucesso">Carteira salva.</span>
+      <span class="msg-erro" *ngIf="erro">{{ erro }}</span>
+    </div>
+
+  </ng-container>
+
+</div>

@@ -1,0 +1,45 @@
+$primary: #1A3C56;
+$border:  #e5e7eb;
+$radius:  12px;
+$muted:   #6b7280;
+
+.quote-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  background: #f8fafc;
+  border: 1px solid $border;
+  border-left: 4px solid $primary;
+  border-radius: $radius;
+  margin-bottom: 1.25rem;
+
+  &__marca {
+    font-size: 1.8rem;
+    line-height: 1;
+    font-weight: 700;
+    color: $primary;
+    font-family: Georgia, serif;
+  }
+
+  &__corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__texto {
+    margin: 0;
+    font-style: italic;
+    font-size: 0.88rem;
+    color: #334155;
+    line-height: 1.45;
+  }
+
+  &__autor {
+    font-size: 0.78rem;
+    color: $muted;
+
+    strong { font-weight: 600; color: #374151; }
+  }
+}

@@ -1,0 +1,331 @@
+$primary:  #1A3C56;
+$border:   #e5e7eb;
+$radius:   12px;
+$muted:    #6b7280;
+
+.medianas-layout {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  min-height: calc(100vh - 80px);
+}
+
+.medianas-header {
+  margin-bottom: 1.75rem;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.3rem;
+  }
+  p {
+    font-size: 0.875rem;
+    color: $muted;
+    margin: 0;
+  }
+}
+
+.filtros-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  flex-wrap: wrap;
+}
+
+.filtro-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  select {
+    padding: 0.45rem 0.75rem;
+    border: 1.5px solid $border;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #111;
+    outline: none;
+    cursor: pointer;
+    min-width: 160px;
+    background: #fff;
+    &:disabled { background: #f9fafb; color: $muted; cursor: not-allowed; }
+  }
+}
+
+.toggle-tabs {
+  display: flex;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+
+  button {
+    flex: 1;
+    padding: 0.45rem 1rem;
+    border: none;
+    background: #fff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $muted;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:first-child { border-right: 1px solid $border; }
+
+    &.active {
+      background: $primary;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    &:not(.active):hover { background: #f3f4f6; }
+  }
+}
+
+.estado-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $muted;
+  font-size: 0.9rem;
+  padding: 3rem 0;
+  justify-content: center;
+}
+
+.estado-vazio {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: $muted;
+
+  &__icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $primary;
+    margin: 0 0 0.5rem;
+  }
+
+  p {
+    font-size: 0.875rem;
+    max-width: 360px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+}
+
+.medianas-table-wrap {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  overflow-x: auto;
+}
+
+.medianas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  white-space: nowrap;
+
+  thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid $border;
+  }
+
+  th {
+    padding: 0.7rem 0.9rem;
+    text-align: right;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  th.col-grupo { text-align: left; position: sticky; left: 0; background: #f8fafc; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba($border, 0.7);
+    &:last-child { border-bottom: none; }
+    &:hover { background: #f9fafb; }
+  }
+
+  td {
+    padding: 0.65rem 0.9rem;
+    text-align: right;
+  }
+
+  td.col-grupo {
+    text-align: left;
+    font-weight: 600;
+    color: $primary;
+    position: sticky;
+    left: 0;
+    background: #fff;
+  }
+
+  tbody tr:hover td.col-grupo { background: #f9fafb; }
+}
+
+.spinner-lg {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid $border;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.historico-section {
+  margin-top: 2rem;
+}
+
+.historico-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.3rem;
+  }
+
+  p {
+    font-size: 0.82rem;
+    color: $muted;
+    margin: 0;
+    max-width: 560px;
+    line-height: 1.5;
+  }
+}
+
+.indicadores-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border: 1.5px solid $border;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $muted;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  .chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--chip-cor, #{$muted});
+    opacity: 0.35;
+    transition: opacity 0.15s;
+  }
+
+  &:hover { border-color: var(--chip-cor, #{$border}); }
+
+  &.active {
+    border-color: var(--chip-cor);
+    color: #111;
+    background: color-mix(in srgb, var(--chip-cor) 8%, #fff);
+
+    .chip-dot { opacity: 1; }
+  }
+}
+
+.chart-wrap {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  padding: 1.25rem 1.25rem 0.75rem;
+}
+
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chart-gridline {
+  stroke: $border;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart-axis-label {
+  font-size: 9px;
+  fill: $muted;
+  text-anchor: middle;
+}
+
+.chart-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding: 0.9rem 0.1rem 1rem;
+  border-top: 1px solid $border;
+  margin-top: 0.5rem;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  &__label {
+    color: $muted;
+    font-weight: 500;
+  }
+
+  &__valor {
+    color: $primary;
+    font-weight: 700;
+  }
+
+  .chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .medianas-layout { padding: 1rem 1rem 3rem; }
+  .filtros-bar { flex-direction: column; gap: 0.75rem; padding: 1rem; }
+  .filtro-grupo select { min-width: unset; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-lg { animation: none !important; }
+}

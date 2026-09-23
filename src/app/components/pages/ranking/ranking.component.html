@@ -1,0 +1,192 @@
+<div class="ranking-layout">
+
+  <!-- ── Cabeçalho ──────────────────────────────────────────────────────────── -->
+  <div class="ranking-header">
+    <div class="ranking-title-group">
+      <h1>Ranking B3</h1>
+      <p>Scores de Qualidade, Risco e Preço por ação, normalizados por setor, segmento ou mercado inteiro.</p>
+    </div>
+    <button class="btn-ingest" (click)="dispararIngestion()" [disabled]="ingerindo || carregando">
+      <span *ngIf="ingerindo" class="spinner"></span>
+      {{ ingerindo ? 'Atualizando...' : '↻ Atualizar dados' }}
+    </button>
+  </div>
+
+  <!-- ── Filtros ─────────────────────────────────────────────────────────────── -->
+  <div class="filtros-bar">
+
+    <div class="filtro-grupo">
+      <label>Agrupamento</label>
+      <div class="toggle-tabs">
+        <button [class.active]="tipoGrupo === 'setor'" (click)="tipoGrupo = 'setor'; onTipoGrupoChange()">Setor</button>
+        <button [class.active]="tipoGrupo === 'segmento'" (click)="tipoGrupo = 'segmento'; onTipoGrupoChange()">Segmento</button>
+        <button [class.active]="tipoGrupo === 'geral'" (click)="tipoGrupo = 'geral'; onTipoGrupoChange()" title="Score calculado contra o mercado inteiro, sem segregar por setor/segmento">Geral</button>
+        <button [class.active]="tipoGrupo === 'hibrido'" (click)="tipoGrupo = 'hibrido'; onTipoGrupoChange()" title="Score Ponderado: 60% Setor + 30% Segmento + 10% Geral (segmento com menos de 3 ações confiáveis redireciona o peso pro Setor)">Híbrido</button>
+      </div>
+    </div>
+
+    <div class="filtro-grupo">
+      <label>Competência</label>
+      <select [(ngModel)]="anoMesSelecionado" (ngModelChange)="onMesChange()" [disabled]="carregandoMeses">
+        <option *ngIf="!meses.length" value="">Sem dados</option>
+        <option *ngFor="let m of meses" [value]="m">{{ formatMes(m) }}</option>
+      </select>
+    </div>
+
+    <div class="filtro-grupo filtro-grupo--wide" *ngIf="tipoGrupo !== 'geral' && tipoGrupo !== 'hibrido'">
+      <label>{{ tipoGrupo === 'setor' ? 'Setor' : 'Segmento' }}</label>
+      <select [(ngModel)]="grupoSelecionado" (ngModelChange)="onGrupoChange()" [disabled]="carregandoGrupos">
+        <option [value]="TODOS_GRUPOS">Todos os {{ tipoGrupo === 'setor' ? 'setores' : 'segmentos' }}</option>
+        <option *ngFor="let g of grupos" [value]="g">{{ g }}</option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- ── Ordenação ──────────────────────────────────────────────────────────── -->
+  <div class="ordenacao-bar" *ngIf="itens.length">
+    <span>Ordenar por:</span>
+    <button *ngFor="let c of camposScoreVisiveis" [class.active]="ordenarPor === c.campo" (click)="ordenar(c.campo)">{{ c.label }}</button>
+
+    <button type="button" class="btn-toggle-delta" [class.active]="mostrarColunasExperimentais" (click)="toggleColunasExperimentais()">
+      {{ mostrarColunasExperimentais ? 'Ocultar' : 'Mostrar' }} colunas Δ
+    </button>
+  </div>
+
+  <!-- ── Filtros de score (mínimo) ─────────────────────────────────────────── -->
+  <div class="filtros-score-bar" *ngIf="itens.length">
+    <span>Filtrar (mín.):</span>
+    <label class="filtro-score" *ngFor="let c of camposScoreVisiveis">
+      {{ c.label }}
+      <input type="number" step="0.01" [(ngModel)]="filtrosMinimo[c.campo]" placeholder="—" />
+    </label>
+
+    <button type="button" class="btn-limpar-filtros" *ngIf="temFiltroAtivo" (click)="limparFiltros()">Limpar filtros</button>
+
+    <span class="filtros-score-contagem">{{ itenOrdenados.length }} de {{ itens.length }} ações</span>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────────────── -->
+  <div class="estado-loading" *ngIf="carregandoRanking">
+    <div class="spinner-lg"></div>
+    <span>Carregando ranking...</span>
+  </div>
+
+  <!-- ── Empty state ────────────────────────────────────────────────────────── -->
+  <div class="estado-vazio" *ngIf="!carregandoRanking && !itens.length && anoMesSelecionado">
+    <div class="estado-vazio__icon">📊</div>
+    <h3>Nenhum dado encontrado</h3>
+    <p>Clique em <strong>"Atualizar dados"</strong> para buscar os indicadores da B3 e calcular os scores.</p>
+  </div>
+
+  <div class="estado-vazio" *ngIf="!carregandoRanking && !anoMesSelecionado && !carregandoMeses">
+    <div class="estado-vazio__icon">📊</div>
+    <h3>Nenhuma ingestão realizada</h3>
+    <p>Clique em <strong>"Atualizar dados"</strong> para iniciar.</p>
+  </div>
+
+  <!-- ── Tabela ─────────────────────────────────────────────────────────────── -->
+  <div class="ranking-table-wrap" *ngIf="!carregandoRanking && itens.length">
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th class="col-fixed col-pos">#</th>
+          <th class="col-fixed col-ticker">Ticker</th>
+          <th class="col-fixed col-nome">Nome</th>
+          <th class="col-grupo" *ngIf="grupoSelecionado === TODOS_GRUPOS">{{ tipoGrupo === 'segmento' ? 'Segmento' : 'Setor' }}</th>
+          <th class="col-score col-score--final" (click)="ordenar('scoreFinal')">
+            Score Final
+            <span class="sort-arrow" *ngIf="ordenarPor === 'scoreFinal'">↓</span>
+          </th>
+          <th class="col-score col-score--final" *ngIf="mostrarColunasExperimentais" (click)="ordenar('scoreFinalDelta')" title="Score Final 100% baseado em Z-score + sigmoide (Qualidade Δ + Risco Δ + Preço Δ) em vez de razão contra a mediana do grupo. Não substitui o Score Final, é pra comparar as duas metodologias lado a lado.">
+            Score Final Δ
+            <span class="sort-arrow" *ngIf="ordenarPor === 'scoreFinalDelta'">↓</span>
+          </th>
+          <th class="col-score" (click)="ordenar('scoreQualidade')">
+            Qualidade
+            <span class="sort-arrow" *ngIf="ordenarPor === 'scoreQualidade'">↓</span>
+          </th>
+          <th class="col-score" *ngIf="mostrarColunasExperimentais" (click)="ordenar('qualidadeDelta')" title="Comparativo diagnóstico a Qualidade — Z-score + sigmoide em vez de razão contra a mediana. Não é sinal temporal.">
+            Qualidade Δ
+            <span class="sort-arrow" *ngIf="ordenarPor === 'qualidadeDelta'">↓</span>
+          </th>
+          <th class="col-score" (click)="ordenar('scoreRisco')">
+            Risco
+            <span class="sort-arrow" *ngIf="ordenarPor === 'scoreRisco'">↓</span>
+          </th>
+          <th class="col-score" *ngIf="mostrarColunasExperimentais" (click)="ordenar('riscoDelta')" title="Mesmos campos/pesos do Risco, normalizado por Z-score + sigmoide (curva contínua) em vez de razão com teto/piso. Não é sinal temporal. 60% Risco + 40% este valor formam o Risco Composto usado no Score Final.">
+            Risco Δ
+            <span class="sort-arrow" *ngIf="ordenarPor === 'riscoDelta'">↓</span>
+          </th>
+          <th class="col-score" (click)="ordenar('scorePreco')">
+            Preço
+            <span class="sort-arrow" *ngIf="ordenarPor === 'scorePreco'">↓</span>
+          </th>
+          <th class="col-score" *ngIf="mostrarColunasExperimentais" (click)="ordenar('precoDelta')" title="Comparativo diagnóstico a Preço — Z-score + sigmoide em vez de razão contra a mediana. Não é sinal temporal.">
+            Preço Δ
+            <span class="sort-arrow" *ngIf="ordenarPor === 'precoDelta'">↓</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of itenOrdenados; let i = index">
+          <td class="col-fixed col-pos">
+            <span class="posicao" [class.posicao--top]="i < 3">{{ i + 1 }}</span>
+          </td>
+          <td class="col-fixed col-ticker">
+            <span class="ticker-badge">{{ item.ticker }}</span>
+          </td>
+          <td class="col-fixed col-nome">{{ item.nome }}</td>
+          <td class="col-grupo" *ngIf="grupoSelecionado === TODOS_GRUPOS">{{ (tipoGrupo === 'segmento' ? item.segmento : item.setor) || '—' }}</td>
+          <td class="col-score col-score--final">
+            <span class="score-badge" [ngClass]="scoreClass(item.scoreFinal)">
+              {{ formatScore(item.scoreFinal) }}
+            </span>
+          </td>
+          <td class="col-score col-score--final" *ngIf="mostrarColunasExperimentais">
+            <span class="score-badge score-badge--delta" [ngClass]="scoreClass(item.scoreFinalDelta)">
+              {{ formatScore(item.scoreFinalDelta) }}
+            </span>
+          </td>
+          <td class="col-score">
+            <span class="score-badge" [ngClass]="scoreClass(item.scoreQualidade)">
+              {{ formatScore(item.scoreQualidade) }}
+            </span>
+          </td>
+          <td class="col-score" *ngIf="mostrarColunasExperimentais">
+            <span class="score-badge score-badge--delta" [ngClass]="scoreClass(item.qualidadeDelta)">
+              {{ formatScore(item.qualidadeDelta) }}
+            </span>
+          </td>
+          <td class="col-score">
+            <span class="score-badge" [ngClass]="scoreClass(item.scoreRisco)">
+              {{ formatScore(item.scoreRisco) }}
+            </span>
+          </td>
+          <td class="col-score" *ngIf="mostrarColunasExperimentais">
+            <span class="score-badge score-badge--delta" [ngClass]="scoreClass(item.riscoDelta)">
+              {{ formatScore(item.riscoDelta) }}
+            </span>
+          </td>
+          <td class="col-score">
+            <span class="score-badge" [ngClass]="scoreClass(item.scorePreco)">
+              {{ formatScore(item.scorePreco) }}
+            </span>
+          </td>
+          <td class="col-score" *ngIf="mostrarColunasExperimentais">
+            <span class="score-badge score-badge--delta" [ngClass]="scoreClass(item.precoDelta)">
+              {{ formatScore(item.precoDelta) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="ranking-legenda">
+      <span class="legenda-dot legenda-dot--alto"></span> ≥ 1.30 acima da média &nbsp;
+      <span class="legenda-dot legenda-dot--medio"></span> 0.80–1.29 na média &nbsp;
+      <span class="legenda-dot legenda-dot--baixo"></span> &lt; 0.80 abaixo da média
+    </p>
+  </div>
+
+</div>

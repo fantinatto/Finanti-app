@@ -1,0 +1,222 @@
+<div class="resumo-layout">
+
+  <!-- ── Cabeçalho ──────────────────────────────────────────────────────────── -->
+  <div class="resumo-header">
+    <div class="resumo-title-group">
+      <h1>Resumo por {{ tipoGrupo === 'setor' ? 'Setor' : 'Segmento' }}</h1>
+      <p>As 3 ações mais bem ranqueadas (score final) dentro de cada grupo.</p>
+    </div>
+  </div>
+
+  <!-- ── Filtros ─────────────────────────────────────────────────────────────── -->
+  <div class="filtros-bar">
+
+    <div class="filtro-grupo">
+      <label>Agrupamento</label>
+      <div class="toggle-tabs">
+        <button [class.active]="tipoGrupo === 'setor'" (click)="tipoGrupo = 'setor'; onTipoGrupoChange()">Setor</button>
+        <button [class.active]="tipoGrupo === 'segmento'" (click)="tipoGrupo = 'segmento'; onTipoGrupoChange()">Segmento</button>
+      </div>
+    </div>
+
+    <div class="filtro-grupo">
+      <label>Competência</label>
+      <select [(ngModel)]="anoMesSelecionado" (ngModelChange)="onMesChange()" [disabled]="carregandoMeses">
+        <option *ngIf="!meses.length" value="">Sem dados</option>
+        <option *ngFor="let m of meses" [value]="m">{{ formatMes(m) }}</option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- ── Gráfico comparativo ────────────────────────────────────────────────── -->
+  <div class="chart-card" *ngIf="!carregandoResumo && graficoDados.length">
+    <h2 class="chart-card__titulo">Comparativo entre {{ tipoGrupo === 'setor' ? 'setores' : 'segmentos' }}</h2>
+    <p class="chart-card__legenda">Score final médio do top 3 de cada grupo, colorido por quanto cada eixo contribuiu — quanto maior a barra, mais forte o grupo neste mês.</p>
+
+    <div class="chart-legenda">
+      <span class="chart-legenda__item" *ngFor="let barra of graficoDados[0]?.segmentos">
+        <span class="chart-legenda__swatch" [style.background]="barra.cor"></span>
+        {{ barra.label }}
+      </span>
+    </div>
+
+    <div class="bar-chart">
+      <div class="bar-row" *ngFor="let barra of graficoDados">
+        <span class="bar-row__label" [title]="barra.nomeGrupo">{{ barra.nomeGrupo }}</span>
+        <div class="bar-row__track">
+          <div class="bar-row__fill" [style.width.%]="barra.percentual">
+            <div
+              class="bar-row__segmento"
+              *ngFor="let seg of barra.segmentos"
+              [style.width.%]="seg.percentual"
+              [style.background]="seg.cor"
+              [title]="barra.nomeGrupo + ' — ' + seg.label + ': ' + formatScore(seg.valorMedio) + ' (' + (seg.percentual | number:'1.0-0') + '% do score)'"
+              tabindex="0"
+            ></div>
+          </div>
+        </div>
+        <span class="bar-row__valor">{{ formatScore(barra.mediaTop3) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Histórico do ranking (segue o toggle de Agrupamento acima) ────────────── -->
+  <div class="chart-card" *ngIf="carregandoHistorico">
+    <div class="estado-loading">
+      <div class="spinner-lg"></div>
+      <span>Carregando histórico...</span>
+    </div>
+  </div>
+
+  <ng-container *ngIf="!carregandoHistorico">
+    <ng-container *ngIf="tipoGrupo === 'setor'; else historicoSegmentoTpl">
+      <ng-container *ngTemplateOutlet="historicoCard; context: { titulo: 'Histórico do ranking por setor', grafico: graficoSetor, chave: 'setor' }"></ng-container>
+    </ng-container>
+    <ng-template #historicoSegmentoTpl>
+      <ng-container *ngTemplateOutlet="historicoCard; context: { titulo: 'Histórico do ranking por segmento', grafico: graficoSegmento, chave: 'segmento' }"></ng-container>
+    </ng-template>
+  </ng-container>
+
+  <!-- ── Loading ────────────────────────────────────────────────────────────── -->
+  <div class="estado-loading" *ngIf="carregandoResumo">
+    <div class="spinner-lg"></div>
+    <span>Carregando resumo...</span>
+  </div>
+
+  <!-- ── Empty state ────────────────────────────────────────────────────────── -->
+  <div class="estado-vazio" *ngIf="!carregandoResumo && !grupos.length && anoMesSelecionado">
+    <div class="estado-vazio__icon">🏆</div>
+    <h3>Nenhum dado encontrado</h3>
+    <p>Rode uma ingestão em <strong>Coleta de Dados</strong> pra gerar o ranking desse mês.</p>
+  </div>
+
+  <div class="estado-vazio" *ngIf="!carregandoResumo && !anoMesSelecionado && !carregandoMeses">
+    <div class="estado-vazio__icon">🏆</div>
+    <h3>Nenhuma ingestão realizada</h3>
+  </div>
+
+  <!-- ── Grid de grupos ─────────────────────────────────────────────────────── -->
+  <ng-container *ngIf="!carregandoResumo && grupos.length">
+
+    <!-- segmento: uma seção por setor, cada uma com o grid dos seus segmentos -->
+    <ng-container *ngIf="tipoGrupo === 'segmento'; else gridPlano">
+      <div class="setor-secao" *ngFor="let setorGrupo of gruposPorSetor">
+        <h2 class="setor-secao__titulo">{{ setorGrupo.nomeSetor }}</h2>
+        <div class="grupos-grid">
+          <ng-container *ngFor="let grupo of setorGrupo.segmentos">
+            <ng-container *ngTemplateOutlet="grupoCard; context: { grupo: grupo }"></ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- setor: grid plano, sem camada superior -->
+    <ng-template #gridPlano>
+      <div class="grupos-grid">
+        <ng-container *ngFor="let grupo of grupos">
+          <ng-container *ngTemplateOutlet="grupoCard; context: { grupo: grupo }"></ng-container>
+        </ng-container>
+      </div>
+    </ng-template>
+
+  </ng-container>
+
+  <ng-template #historicoCard let-titulo="titulo" let-grafico="grafico" let-chave="chave">
+    <div class="chart-card" *ngIf="grafico">
+      <h2 class="chart-card__titulo">{{ titulo }}</h2>
+      <p class="chart-card__legenda">
+        Média do top 3 (score final) de cada grupo, mês a mês — {{ grafico.series.length }}
+        {{ grafico.series.length === 1 ? 'grupo com melhor score' : 'grupos com melhor score' }} no mês mais recente.
+      </p>
+
+      <div class="chart-legenda">
+        <span class="chart-legenda__item" *ngFor="let serie of grafico.series">
+          <span class="chart-legenda__swatch" [style.background]="serie.cor"></span>
+          {{ serie.nomeGrupo }}
+        </span>
+      </div>
+
+      <div class="linha-chart-wrap">
+        <svg [attr.viewBox]="'0 0 ' + grafico.largura + ' ' + grafico.altura" class="linha-chart" preserveAspectRatio="xMidYMid meet">
+          <line
+            *ngFor="let tick of grafico.eixoY"
+            class="linha-chart__grid"
+            x1="46" [attr.x2]="grafico.largura - 20"
+            [attr.y1]="tick.y" [attr.y2]="tick.y"
+          />
+          <text *ngFor="let tick of grafico.eixoY" x="40" [attr.y]="(tick.y ?? 0) + 3" class="linha-chart__eixo-label" text-anchor="end">{{ tick.label }}</text>
+          <text *ngFor="let tick of grafico.eixoX" [attr.x]="tick.x" [attr.y]="grafico.altura - 12" class="linha-chart__eixo-label" text-anchor="middle">{{ tick.label }}</text>
+
+          <g *ngFor="let serie of grafico.series">
+            <path [attr.d]="serie.pathD" fill="none" [attr.stroke]="serie.cor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <circle
+              *ngFor="let ponto of serie.pontos"
+              [attr.cx]="ponto.x" [attr.cy]="ponto.y" r="4"
+              [attr.fill]="serie.cor" stroke="#fff" stroke-width="2"
+              class="linha-chart__ponto"
+              tabindex="0"
+              [attr.aria-label]="serie.nomeGrupo + ', ' + formatMes(ponto.anoMes) + ': ' + formatScore(ponto.valor)"
+              (mouseenter)="onHoverPonto(chave, serie, ponto)"
+              (mouseleave)="onHoverSai()"
+              (focus)="onHoverPonto(chave, serie, ponto)"
+              (blur)="onHoverSai()"
+            />
+          </g>
+        </svg>
+
+        <div
+          class="linha-chart__tooltip"
+          *ngIf="hover && hover.chave === chave"
+          [style.left.%]="(hover.ponto.x / grafico.largura) * 100"
+          [style.top.%]="(hover.ponto.y / grafico.altura) * 100"
+        >
+          <strong>{{ hover.serie.nomeGrupo }}</strong>
+          {{ formatMes(hover.ponto.anoMes) }}: {{ formatScore(hover.ponto.valor) }}
+        </div>
+      </div>
+
+      <button class="btn-tabela-toggle" type="button" (click)="toggleTabela(chave)">
+        {{ tabelaVisivel[chave] ? 'Ocultar tabela' : 'Ver como tabela' }}
+      </button>
+
+      <div class="linha-chart-tabela-wrap" *ngIf="tabelaVisivel[chave]">
+        <table class="linha-chart-tabela">
+          <thead>
+            <tr>
+              <th>Grupo</th>
+              <th *ngFor="let tick of grafico.eixoX">{{ tick.label }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let serie of grafico.series">
+              <td class="linha-chart-tabela__grupo">
+                <span class="chart-legenda__swatch" [style.background]="serie.cor"></span>
+                {{ serie.nomeGrupo }}
+              </td>
+              <td *ngFor="let tick of grafico.eixoX">{{ formatScore(valorNoMes(serie, tick.anoMes)) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #grupoCard let-grupo="grupo">
+    <div class="grupo-card">
+      <h3 class="grupo-card__titulo">{{ grupo.nomeGrupo }}</h3>
+
+      <div class="grupo-card__vazio" *ngIf="!grupo.top3.length">Sem ações ranqueadas</div>
+
+      <ol class="top3-lista" *ngIf="grupo.top3.length">
+        <li *ngFor="let item of grupo.top3; let i = index" class="top3-item">
+          <span class="posicao" [class.posicao--top]="i === 0">{{ i + 1 }}</span>
+          <span class="ticker-badge">{{ item.ticker }}</span>
+          <span class="top3-nome">{{ item.nome }}</span>
+          <span class="score-badge" [ngClass]="scoreClass(item.scoreFinal)">{{ formatScore(item.scoreFinal) }}</span>
+        </li>
+      </ol>
+    </div>
+  </ng-template>
+
+</div>

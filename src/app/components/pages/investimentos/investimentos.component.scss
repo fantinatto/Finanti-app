@@ -1,0 +1,493 @@
+$primary:  #1A3C56;
+$accent:   #22C55E;
+$border:   #e5e7eb;
+$radius:   12px;
+$muted:    #6b7280;
+$danger:   #ef4444;
+
+.investimentos-layout {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  min-height: calc(100vh - 80px);
+}
+
+.investimentos-header {
+  margin-bottom: 1.75rem;
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.3rem;
+  }
+  p {
+    font-size: 0.875rem;
+    color: $muted;
+    margin: 0;
+  }
+}
+
+// ── Formulário ────────────────────────────────────────────────────────────────
+
+.form-card {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+
+  &__titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 1rem;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &--wide { grid-column: span 2; }
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  input, select {
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid $border;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #111;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s;
+
+    &:focus { border-color: $primary; }
+  }
+}
+
+.form-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.btn-primario {
+  padding: 0.6rem 1.25rem;
+  background: $primary;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.btn-secundario {
+  padding: 0.6rem 1.25rem;
+  background: #fff;
+  color: $muted;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover { background: #f9fafb; }
+}
+
+// ── Resumo + mês ──────────────────────────────────────────────────────────────
+
+.resumo-bar {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  flex-wrap: wrap;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  &__label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__valor {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $primary;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__mes {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: $muted;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    select {
+      padding: 0.4rem 0.65rem;
+      border: 1.5px solid $border;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      background: #fff;
+    }
+  }
+}
+
+// ── Estado ────────────────────────────────────────────────────────────────────
+
+.estado-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: $muted;
+  font-size: 0.9rem;
+  padding: 3rem 0;
+  justify-content: center;
+}
+
+.estado-vazio {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: $muted;
+
+  &__icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $primary;
+    margin: 0 0 0.5rem;
+  }
+
+  p {
+    font-size: 0.875rem;
+    max-width: 360px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+}
+
+// ── Tabela ────────────────────────────────────────────────────────────────────
+
+.investimentos-table-wrap {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  overflow-x: auto;
+}
+
+.investimentos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  white-space: nowrap;
+
+  thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid $border;
+  }
+
+  th {
+    padding: 0.7rem 0.9rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  th.col-num { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba($border, 0.7);
+    &:last-child { border-bottom: none; }
+    &:hover { background: #f9fafb; }
+  }
+
+  td {
+    padding: 0.65rem 0.9rem;
+    vertical-align: middle;
+  }
+
+  td.col-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  td.col-nome {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.tipo-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  &--acao { background: rgba($primary, 0.08); color: $primary; }
+  &--fii { background: rgba($accent, 0.12); color: darken($accent, 15%); }
+  &--renda_fixa { background: #f3f4f6; color: $muted; }
+}
+
+.ticker-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  background: rgba($primary, 0.07);
+  color: $primary;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+
+.sem-ticker { color: $muted; }
+
+.ganho--positivo { color: #15803d; font-weight: 700; }
+.ganho--negativo { color: #b91c1c; font-weight: 700; }
+.ganho--vazio { color: $muted; }
+
+.aviso-nao-negociavel {
+  display: inline-block;
+  white-space: normal;
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #b45309;
+}
+
+.btn-icone {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1.5px solid $border;
+  background: #fff;
+  color: $muted;
+  cursor: pointer;
+  font-size: 0.8rem;
+  margin-left: 0.35rem;
+  transition: all 0.15s;
+
+  &:hover { border-color: $primary; color: $primary; }
+  &--remover:hover:not(:disabled) { border-color: $danger; color: $danger; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.spinner-lg {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid $border;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Ranking das ações da carteira ──────────────────────────────────────────────
+
+.ranking-carteira-card {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+
+  &__titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0 0 0.35rem;
+  }
+
+  &__aviso {
+    font-size: 0.78rem;
+    color: $muted;
+    line-height: 1.5;
+    margin: 0 0 1rem;
+
+    a { color: $primary; font-weight: 600; }
+  }
+}
+
+.ranking-carteira-table-wrap {
+  overflow-x: auto;
+}
+
+.ranking-carteira-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  thead tr {
+    background: #f8fafc;
+    border-bottom: 2px solid $border;
+  }
+
+  th {
+    padding: 0.65rem 0.8rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  th.col-num { text-align: center; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba($border, 0.7);
+    &:last-child { border-bottom: none; }
+    &:hover { background: #f9fafb; }
+  }
+
+  td {
+    padding: 0.6rem 0.8rem;
+    vertical-align: middle;
+  }
+
+  td.col-num { text-align: center; font-variant-numeric: tabular-nums; }
+
+  td.col-nome {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  td.col-setor {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $muted;
+  }
+
+  td.col-recomendacao {
+    min-width: 220px;
+  }
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-width: 48px;
+  text-align: center;
+
+  &.score--alto  { background: #dcfce7; color: #15803d; }
+  &.score--medio { background: #fef9c3; color: #92400e; }
+  &.score--baixo { background: #fee2e2; color: #b91c1c; }
+  &.score--vazio { background: #f3f4f6; color: #9ca3af; }
+}
+
+.recomendacao-vazia { color: $muted; }
+
+.recomendacao-pill {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+
+  &__tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    background: #f3f4f6;
+    color: $muted;
+  }
+
+  &__texto {
+    font-size: 0.78rem;
+    color: #374151; // texto usa token de texto, nunca a cor da categoria
+    line-height: 1.4;
+  }
+
+  &__delta {
+    display: inline-block;
+    margin-left: 0.3rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 4px;
+    background: rgba($accent, 0.12);
+    color: darken($accent, 15%);
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &.cat--aporte .recomendacao-pill__tag { background: #dcfce7; color: #15803d; }
+  &.cat--troca .recomendacao-pill__tag  { background: #dbeafe; color: #1d4ed8; }
+  &.cat--venda .recomendacao-pill__tag  { background: #fee2e2; color: #b91c1c; }
+}
+
+@media (max-width: 768px) {
+  .investimentos-layout { padding: 1rem 1rem 3rem; }
+  .form-card, .resumo-bar { padding: 1rem; }
+  .campo--wide { grid-column: span 1; }
+  .resumo-bar { flex-direction: column; align-items: flex-start; }
+  .resumo-bar__mes { margin-left: 0; width: 100%; }
+  .ranking-carteira-card { padding: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner-lg { animation: none !important; }
+}

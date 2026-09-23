@@ -57,7 +57,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     try {
       await firstValueFrom(this.authService.login(email, password));
-      this.router.navigate(['/account']);
+      this.router.navigate(['/ranking']);
     } catch (err: any) {
       const msg = err?.error?.message || this.translate.instant('AUTH.OAUTH_ERROR');
       this.errorMessage = msg;

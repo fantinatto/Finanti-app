@@ -1,0 +1,154 @@
+<div class="medianas-layout">
+
+  <!-- ── Cabeçalho ──────────────────────────────────────────────────────────── -->
+  <div class="medianas-header">
+    <div class="medianas-title-group">
+      <h1>Medianas por Setor/Segmento</h1>
+      <p>Valor de referência de cada indicador dentro do grupo — usado como base pra normalização do score.</p>
+    </div>
+  </div>
+
+  <!-- ── Filtros ─────────────────────────────────────────────────────────────── -->
+  <div class="filtros-bar">
+
+    <div class="filtro-grupo">
+      <label>Agrupamento</label>
+      <div class="toggle-tabs">
+        <button [class.active]="tipoGrupo === 'setor'" (click)="tipoGrupo = 'setor'; onTipoGrupoChange()">Setor</button>
+        <button [class.active]="tipoGrupo === 'segmento'" (click)="tipoGrupo = 'segmento'; onTipoGrupoChange()">Segmento</button>
+      </div>
+    </div>
+
+    <div class="filtro-grupo">
+      <label>Competência</label>
+      <select [(ngModel)]="anoMesSelecionado" (ngModelChange)="onMesChange()" [disabled]="carregandoMeses">
+        <option *ngIf="!meses.length" value="">Sem dados</option>
+        <option *ngFor="let m of meses" [value]="m">{{ formatMes(m) }}</option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────────────── -->
+  <div class="estado-loading" *ngIf="carregandoMedianas">
+    <div class="spinner-lg"></div>
+    <span>Carregando medianas...</span>
+  </div>
+
+  <!-- ── Empty state ────────────────────────────────────────────────────────── -->
+  <div class="estado-vazio" *ngIf="!carregandoMedianas && !medianas.length && anoMesSelecionado">
+    <div class="estado-vazio__icon">📊</div>
+    <h3>Nenhum dado encontrado</h3>
+    <p>Rode uma ingestão em <strong>Coleta de Dados</strong> pra gerar as medianas desse mês.</p>
+  </div>
+
+  <div class="estado-vazio" *ngIf="!carregandoMedianas && !anoMesSelecionado && !carregandoMeses">
+    <div class="estado-vazio__icon">📊</div>
+    <h3>Nenhuma ingestão realizada</h3>
+  </div>
+
+  <!-- ── Tabela ─────────────────────────────────────────────────────────────── -->
+  <div class="medianas-table-wrap" *ngIf="!carregandoMedianas && medianas.length">
+    <table class="medianas-table">
+      <thead>
+        <tr>
+          <th class="col-grupo">{{ tipoGrupo === 'setor' ? 'Setor' : 'Segmento' }}</th>
+          <th *ngFor="let col of colunas" class="col-valor">{{ col.label }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let mediana of medianas">
+          <td class="col-grupo">{{ mediana.nomeGrupo }}</td>
+          <td *ngFor="let col of colunas" class="col-valor">
+            {{ formatValor(getValor(mediana, col.campo), col.percentual) }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Histórico ──────────────────────────────────────────────────────────── -->
+  <div class="historico-section">
+    <div class="historico-header">
+      <div class="medianas-title-group">
+        <h2>Evolução histórica</h2>
+        <p>Mediana de cada indicador ao longo dos meses, para o grupo selecionado. Cada linha usa sua própria escala (min/max da série) — compare a tendência, não a magnitude entre indicadores.</p>
+      </div>
+
+      <div class="filtro-grupo">
+        <label>{{ tipoGrupo === 'setor' ? 'Setor' : 'Segmento' }}</label>
+        <select [(ngModel)]="grupoHistoricoSelecionado" (ngModelChange)="onGrupoHistoricoChange()" [disabled]="carregandoGrupos">
+          <option *ngIf="!gruposHistorico.length" value="">Sem dados</option>
+          <option *ngFor="let g of gruposHistorico" [value]="g">{{ g }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="indicadores-picker">
+      <button
+        *ngFor="let col of colunas"
+        type="button"
+        class="chip"
+        [class.active]="isIndicadorSelecionado(col.campo)"
+        [style.--chip-cor]="col.cor"
+        (click)="toggleIndicador(col.campo)"
+      >
+        <span class="chip-dot"></span>{{ col.label }}
+      </button>
+    </div>
+
+    <div class="estado-loading" *ngIf="carregandoHistorico">
+      <div class="spinner-lg"></div>
+      <span>Carregando histórico...</span>
+    </div>
+
+    <div class="estado-vazio" *ngIf="!carregandoHistorico && !carregandoGrupos && !historico.length">
+      <div class="estado-vazio__icon">📈</div>
+      <h3>Sem histórico pra esse grupo</h3>
+    </div>
+
+    <div class="chart-wrap" *ngIf="!carregandoHistorico && historico.length">
+      <svg *ngIf="colunasAtivas.length; else semIndicador" [attr.viewBox]="'0 0 ' + chartWidth + ' ' + chartHeight" class="chart-svg">
+        <line
+          *ngFor="let lbl of labelsEixoX"
+          [attr.x1]="lbl.x" [attr.x2]="lbl.x"
+          y1="16" [attr.y2]="chartHeight - 26"
+          class="chart-gridline"
+        />
+        <path
+          *ngFor="let col of colunasAtivas"
+          [attr.d]="pathSerie(col.campo)"
+          fill="none"
+          [attr.stroke]="col.cor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <ng-container *ngFor="let col of colunasAtivas">
+          <circle
+            *ngFor="let p of pontosSerie(col.campo)"
+            [attr.cx]="p.x" [attr.cy]="p.y" r="2.5"
+            [attr.fill]="col.cor"
+          >
+            <title>{{ formatMes(p.anoMes) }} — {{ formatValor(p.valor, col.percentual) }}</title>
+          </circle>
+        </ng-container>
+        <text *ngFor="let lbl of labelsEixoX" [attr.x]="lbl.x" [attr.y]="chartHeight - 8" class="chart-axis-label">{{ lbl.texto }}</text>
+      </svg>
+      <ng-template #semIndicador>
+        <div class="estado-vazio">
+          <p>Selecione ao menos um indicador acima pra desenhar o gráfico.</p>
+        </div>
+      </ng-template>
+
+      <div class="chart-legenda">
+        <div class="chart-legenda__item" *ngFor="let col of colunasAtivas">
+          <span class="chip-dot" [style.background]="col.cor"></span>
+          <span class="chart-legenda__label">{{ col.label }}</span>
+          <span class="chart-legenda__valor">{{ formatValor(ultimoValor(col.campo), col.percentual) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

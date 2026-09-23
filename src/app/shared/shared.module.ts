@@ -10,6 +10,7 @@ import { LanguageSwitcherComponent } from '../components/language-switcher/langu
 import { AdsComponent } from './components/ads/ads.component';
 import { VideoAdComponent } from './components/video-ad/video-ad.component';
 import { LoadingSpinnerComponent } from './components/loading/loading-spinner.component';
+import { QuoteBannerComponent } from './components/quote-banner/quote-banner.component';
 import { HasFeatureDirective } from '../directives/has-feature.directive';
 import { CanPipe } from '../pipes/can.pipe';
 
@@ -21,6 +22,7 @@ import { CanPipe } from '../pipes/can.pipe';
     AdsComponent,
     VideoAdComponent,
     LoadingSpinnerComponent,
+    QuoteBannerComponent,
     HasFeatureDirective,
     CanPipe,
   ],
@@ -43,6 +45,7 @@ import { CanPipe } from '../pipes/can.pipe';
     AdsComponent,
     VideoAdComponent,
     LoadingSpinnerComponent,
+    QuoteBannerComponent,
     HasFeatureDirective,
     CanPipe,
   ],

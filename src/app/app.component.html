@@ -1,16 +1,101 @@
 <header class="app-header" *ngIf="(authService.authState$ | async)?.isAuthenticated">
+
+  <!-- Logo -->
   <div class="left">
-    <a routerLink="/account" class="logo">Fin<span class="logo-up">anti</span></a>
+    <a routerLink="/ranking" class="logo">Fin<span class="logo-up">anti</span></a>
   </div>
 
+  <!-- Nav desktop -->
   <nav class="nav desktop-nav">
-    <a routerLink="/account" routerLinkActive="active" class="nav-link">Conta</a>
+    <div class="indicadores-menu-container">
+      <button
+        class="nav-link indicadores-menu-trigger"
+        [class.active]="indicadoresMenuOpen"
+        (click)="toggleIndicadoresMenu()"
+        [attr.aria-expanded]="indicadoresMenuOpen"
+      >
+        Indicadores Fundamentalistas
+        <span class="indicadores-menu-chevron" [class.open]="indicadoresMenuOpen">▾</span>
+      </button>
+
+      <div class="indicadores-menu-dropdown" [class.open]="indicadoresMenuOpen">
+        <a routerLink="/coleta" routerLinkActive="active" class="indicadores-menu-item" (click)="closeIndicadoresMenu()">Coleta</a>
+        <a routerLink="/ranking" routerLinkActive="active" class="indicadores-menu-item" (click)="closeIndicadoresMenu()">Ranking</a>
+        <a routerLink="/resumo" routerLinkActive="active" class="indicadores-menu-item" (click)="closeIndicadoresMenu()">Resumo</a>
+        <a routerLink="/medianas" routerLinkActive="active" class="indicadores-menu-item" (click)="closeIndicadoresMenu()">Medianas</a>
+      </div>
+
+      <div class="indicadores-menu-backdrop" *ngIf="indicadoresMenuOpen" (click)="closeIndicadoresMenu()"></div>
+    </div>
+
+    <a routerLink="/carteira" routerLinkActive="active" class="nav-link">Carteira de Investimentos</a>
+    <a routerLink="/investimentos" routerLinkActive="active" class="nav-link">Meus Investimentos</a>
+    <a routerLink="/account/settings" routerLinkActive="active" class="nav-link nav-link--settings">Configurações</a>
   </nav>
 
+  <!-- Right: user menu + hamburger -->
   <div class="right">
-    <button class="btn-signout" (click)="logout()">Sair</button>
+
+    <!-- User menu (desktop) -->
+    <div class="user-menu-container">
+      <button class="user-menu-trigger" (click)="toggleUserMenu()" [attr.aria-expanded]="userMenuOpen" aria-label="Menu do usuário">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="user-menu-dropdown" [class.open]="userMenuOpen">
+        <div class="user-menu-info">
+          <span class="user-menu-name">{{ userName }}</span>
+          <span class="user-menu-email">{{ userEmail }}</span>
+        </div>
+        <div class="user-menu-divider"></div>
+        <span class="user-menu-subheader">Indicadores Fundamentalistas</span>
+        <a routerLink="/coleta" class="user-menu-item" (click)="closeUserMenu()">Coleta de Dados</a>
+        <a routerLink="/ranking" class="user-menu-item" (click)="closeUserMenu()">Ranking</a>
+        <a routerLink="/resumo" class="user-menu-item" (click)="closeUserMenu()">Resumo</a>
+        <a routerLink="/medianas" class="user-menu-item" (click)="closeUserMenu()">Medianas</a>
+        <div class="user-menu-divider"></div>
+        <a routerLink="/carteira" class="user-menu-item" (click)="closeUserMenu()">Carteira de Investimentos</a>
+        <a routerLink="/investimentos" class="user-menu-item" (click)="closeUserMenu()">Meus Investimentos</a>
+        <a routerLink="/account/settings" class="user-menu-item" (click)="closeUserMenu()">Configurações</a>
+        <div class="user-menu-divider"></div>
+        <button class="user-menu-item user-menu-item--signout" (click)="logout()">Sair</button>
+      </div>
+
+      <div class="user-menu-backdrop" *ngIf="userMenuOpen" (click)="closeUserMenu()"></div>
+    </div>
+
+    <!-- Hamburger (mobile) -->
+    <button class="hamburger" (click)="toggleMobileMenu()" [attr.aria-expanded]="mobileMenuOpen" aria-label="Menu de navegação">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
   </div>
 </header>
+
+<!-- Mobile drawer -->
+<div class="mobile-nav-backdrop" [class.open]="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+<nav class="mobile-nav-drawer" [class.open]="mobileMenuOpen" *ngIf="(authService.authState$ | async)?.isAuthenticated">
+  <div class="mobile-nav-user">
+    <span class="mobile-nav-name">{{ userName }}</span>
+    <span class="mobile-nav-email">{{ userEmail }}</span>
+  </div>
+  <div class="mobile-nav-divider"></div>
+  <span class="mobile-nav-subheader">Indicadores Fundamentalistas</span>
+  <a routerLink="/coleta" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Coleta de Dados</a>
+  <a routerLink="/ranking" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Ranking</a>
+  <a routerLink="/resumo" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Resumo</a>
+  <a routerLink="/medianas" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Medianas</a>
+  <div class="mobile-nav-divider"></div>
+  <a routerLink="/carteira" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Carteira de Investimentos</a>
+  <a routerLink="/investimentos" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Meus Investimentos</a>
+  <a routerLink="/account/settings" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Configurações</a>
+  <div class="mobile-nav-divider"></div>
+  <button class="btn-signout--mobile" (click)="logout()">Sair</button>
+</nav>
 
 <main class="app-main">
   <router-outlet></router-outlet>
