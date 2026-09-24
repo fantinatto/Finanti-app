@@ -10,7 +10,8 @@ export interface RankingItem {
   /** Comparativo diagnóstico a scoreRisco — mesmo mês/dado, normalizado por Z-score +
    * sigmoide (curva contínua) em vez de razão com teto/piso. Não é sinal temporal. */
   riscoDelta: number | null;
-  /** 60% scoreRisco + 40% riscoDelta — é isso que entra no scoreFinal, não scoreRisco puro. */
+  /** riscoDelta como principal (fallback pra scoreRisco só quando Δ é null) — é isso que entra
+   * no scoreFinal, não scoreRisco puro. Trocado de um blend 60/40 pra isso em 2026-09-23. */
   riscoComposto: number | null;
   scorePreco: number | null;
   /** Comparativo diagnóstico a scorePreco — Z-score + sigmoide em vez de razão à mediana. */

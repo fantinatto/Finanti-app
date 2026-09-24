@@ -54,6 +54,7 @@ export class CarteiraComponent implements OnInit {
   baseCustomInput: number | null = null;
   ajustarPorJuros = false;
   tipoRankingRecomendacao: TipoRankingRecomendacao = 'setor';
+  permiteFracionario = true;
 
   sugestaoInfo = '';
   aplicandoSugestao = false;
@@ -110,6 +111,7 @@ export class CarteiraComponent implements OnInit {
     this.baseRegraCustom = config.baseRegraCustom;
     this.ajustarPorJuros = config.regraSelecionada === 'base_di';
     this.tipoRankingRecomendacao = config.tipoRankingRecomendacao ?? 'setor';
+    this.permiteFracionario = config.permiteFracionario ?? true;
 
     this.alocacoesSegmentoFii = SEGMENTOS_FII_PROVISORIOS.map((nome) => {
       const existente = config.alocacoesSegmentoFii.find((a) => a.segmento === nome);
@@ -197,6 +199,7 @@ export class CarteiraComponent implements OnInit {
       regraSelecionada: this.regraSelecionada ?? undefined,
       baseRegraCustom: this.baseRegraCustom ?? undefined,
       tipoRankingRecomendacao: this.tipoRankingRecomendacao,
+      permiteFracionario: this.permiteFracionario,
       alocacoesSetor: this.alocacoesSetor,
       alocacoesSegmentoFii: this.alocacoesSegmentoFii,
     }).subscribe({

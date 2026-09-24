@@ -2,12 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { UserService } from '../../../services/user.service';
 import { UserProfile } from '../../../interfaces/user.interfaces';
 
+type AbaSettings = 'perfil' | 'carteira';
+
 @Component({
   selector: 'app-account-settings',
   templateUrl: './account-settings.component.html',
   styleUrls: ['./account-settings.component.scss'],
 })
 export class AccountSettingsComponent implements OnInit {
+  abaAtiva: AbaSettings = 'perfil';
+
   perfil: UserProfile | null = null;
 
   displayName = '';
@@ -23,6 +27,10 @@ export class AccountSettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarPerfil();
+  }
+
+  setAba(aba: AbaSettings): void {
+    this.abaAtiva = aba;
   }
 
   carregarPerfil(): void {

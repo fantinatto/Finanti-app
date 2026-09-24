@@ -4,14 +4,22 @@ $border:  #e5e7eb;
 $radius:  12px;
 $muted:   #6b7280;
 
+// Header + abas ficam num wrapper próprio (não o de 560px) porque a aba Carteira usa o
+// layout mais largo de app-carteira (720px) — só o conteúdo da aba Perfil é estreito.
+.settings-header-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 0;
+}
+
 .settings-layout {
   max-width: 560px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 1.5rem 1.5rem 4rem;
 }
 
 .settings-header {
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.5rem;
 
   h1 {
     font-size: 1.5rem;
@@ -25,6 +33,39 @@ $muted:   #6b7280;
     margin: 0;
     line-height: 1.5;
   }
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid $border;
+  margin-bottom: 0;
+}
+
+.settings-tab {
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $muted;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover { color: $primary; }
+
+  &.active {
+    color: $primary;
+    border-bottom-color: $primary;
+  }
+}
+
+.campo-legenda {
+  font-size: 0.78rem;
+  color: $muted;
+  margin: 0.3rem 0 0;
+  line-height: 1.4;
 }
 
 .settings-card {

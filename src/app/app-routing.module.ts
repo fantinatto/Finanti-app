@@ -26,13 +26,16 @@ const routes: Routes = [
     path: 'resumo',
     loadChildren: () => import('./components/pages/resumo/resumo.module').then(m => m.ResumoModule)
   },
-  {
-    path: 'carteira',
-    loadChildren: () => import('./components/pages/carteira/carteira.module').then(m => m.CarteiraModule)
-  },
+  // Carteira de Investimentos (parâmetros) virou uma aba dentro de Configurações — bookmark antigo
+  // redireciona pra lá em vez de dar 404.
+  { path: 'carteira', redirectTo: 'account/settings', pathMatch: 'full' },
   {
     path: 'investimentos',
     loadChildren: () => import('./components/pages/investimentos/investimentos.module').then(m => m.InvestimentosModule)
+  },
+  {
+    path: 'simulacao',
+    loadChildren: () => import('./components/pages/simulacao/simulacao.module').then(m => m.SimulacaoModule)
   },
   {
     path: 'privacidade',

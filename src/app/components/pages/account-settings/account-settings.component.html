@@ -1,9 +1,18 @@
-<div class="settings-layout">
-
+<div class="settings-header-wrap">
   <div class="settings-header">
     <h1>Configurações</h1>
-    <p>Dados da sua conta — a data de nascimento é usada para calcular sua idade nas regras de rebalanceamento da Carteira de Investimentos.</p>
+    <p>Dados da sua conta e parâmetros da Carteira de Investimentos.</p>
   </div>
+
+  <div class="settings-tabs">
+    <button type="button" class="settings-tab" [class.active]="abaAtiva === 'perfil'" (click)="setAba('perfil')">Perfil</button>
+    <button type="button" class="settings-tab" [class.active]="abaAtiva === 'carteira'" (click)="setAba('carteira')">Carteira de Investimentos</button>
+  </div>
+</div>
+
+<!-- .settings-layout é estreito (560px, pensado só pro form de Perfil) — a aba Carteira usa o
+     layout próprio e mais largo de app-carteira, por isso fica fora desse wrapper. -->
+<div class="settings-layout" *ngIf="abaAtiva === 'perfil'">
 
   <div class="estado-loading" *ngIf="carregando">
     <div class="spinner-lg"></div>
@@ -30,6 +39,7 @@
     <div class="campo">
       <label for="birthDate">Data de nascimento</label>
       <input id="birthDate" type="date" [(ngModel)]="birthDate" name="birthDate" />
+      <p class="campo-legenda">Usada pra calcular sua idade nas regras de rebalanceamento da Carteira de Investimentos.</p>
     </div>
 
     <div class="acoes">
@@ -41,3 +51,5 @@
   </form>
 
 </div>
+
+<app-carteira *ngIf="abaAtiva === 'carteira'"></app-carteira>

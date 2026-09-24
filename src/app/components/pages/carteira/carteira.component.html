@@ -144,6 +144,17 @@
       <p class="derivado">{{ descricaoRankingRecomendacao }}</p>
     </div>
 
+    <!-- ── Compra/venda fracionária ─────────────────────────────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">Compra e venda fracionária</h2>
+      <p class="card__legenda">Se você só opera lote-padrão na sua corretora, desative — recomendações e execuções na Simulação passam a considerar só múltiplos de 100 ações.</p>
+
+      <label class="toggle-juros">
+        <input type="checkbox" [(ngModel)]="permiteFracionario" name="permiteFracionario" />
+        Permitir compra/venda fracionária (qualquer quantidade de ações)
+      </label>
+    </div>
+
     <div class="acoes-salvar">
       <button type="button" class="btn-salvar" [disabled]="salvando" (click)="salvar()">{{ salvando ? 'Salvando...' : 'Salvar carteira' }}</button>
       <span class="msg-sucesso" *ngIf="salvoComSucesso">Carteira salva.</span>

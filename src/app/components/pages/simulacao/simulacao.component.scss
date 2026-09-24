@@ -28,6 +28,95 @@ $danger:   #ef4444;
   }
 }
 
+// ── Painel da simulação ──────────────────────────────────────────────────────
+
+.simulacao-config-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+
+  &__bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: $muted;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    small {
+      font-size: 0.75rem;
+      color: $muted;
+    }
+  }
+
+  &__caixa {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: $primary;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__linha {
+    display: flex;
+    gap: 0.6rem;
+
+    input {
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid $border;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      width: 160px;
+      outline: none;
+
+      &:focus { border-color: $primary; }
+    }
+  }
+
+  &__acoes {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+}
+
+.btn-perigo {
+  padding: 0.6rem 1.25rem;
+  background: #fff;
+  color: $danger;
+  border: 1.5px solid rgba($danger, 0.4);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: rgba($danger, 0.06); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.confirmacao-reinicio {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: $muted;
+  max-width: 340px;
+}
+
 // ── Formulário ────────────────────────────────────────────────────────────────
 
 .form-card {
@@ -114,6 +203,7 @@ $danger:   #ef4444;
   cursor: pointer;
 
   &:hover { background: #f9fafb; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 // ── Resumo + mês ──────────────────────────────────────────────────────────────
@@ -417,6 +507,11 @@ $danger:   #ef4444;
   td.col-recomendacao {
     min-width: 220px;
   }
+
+  td.col-executar {
+    text-align: center;
+    white-space: nowrap;
+  }
 }
 
 .score-badge {
@@ -494,6 +589,26 @@ $danger:   #ef4444;
   &.cat--venda .recomendacao-pill__tag  { background: #fee2e2; color: #b91c1c; }
 }
 
+.btn-executar {
+  padding: 0.4rem 0.9rem;
+  background: $primary;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.executar-desabilitado {
+  color: $muted;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 768px) {
   .investimentos-layout { padding: 1rem 1rem 3rem; }
   .form-card, .resumo-bar { padding: 1rem; }
@@ -501,6 +616,7 @@ $danger:   #ef4444;
   .resumo-bar { flex-direction: column; align-items: flex-start; }
   .resumo-bar__mes { margin-left: 0; width: 100%; }
   .ranking-carteira-card { padding: 1rem; }
+  .simulacao-config-card { flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {

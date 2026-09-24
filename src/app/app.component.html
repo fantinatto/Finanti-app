@@ -28,8 +28,8 @@
       <div class="indicadores-menu-backdrop" *ngIf="indicadoresMenuOpen" (click)="closeIndicadoresMenu()"></div>
     </div>
 
-    <a routerLink="/carteira" routerLinkActive="active" class="nav-link">Carteira de Investimentos</a>
     <a routerLink="/investimentos" routerLinkActive="active" class="nav-link">Meus Investimentos</a>
+    <a routerLink="/simulacao" routerLinkActive="active" class="nav-link">Simulação</a>
     <a routerLink="/account/settings" routerLinkActive="active" class="nav-link nav-link--settings">Configurações</a>
   </nav>
 
@@ -56,8 +56,8 @@
         <a routerLink="/resumo" class="user-menu-item" (click)="closeUserMenu()">Resumo</a>
         <a routerLink="/medianas" class="user-menu-item" (click)="closeUserMenu()">Medianas</a>
         <div class="user-menu-divider"></div>
-        <a routerLink="/carteira" class="user-menu-item" (click)="closeUserMenu()">Carteira de Investimentos</a>
         <a routerLink="/investimentos" class="user-menu-item" (click)="closeUserMenu()">Meus Investimentos</a>
+        <a routerLink="/simulacao" class="user-menu-item" (click)="closeUserMenu()">Simulação</a>
         <a routerLink="/account/settings" class="user-menu-item" (click)="closeUserMenu()">Configurações</a>
         <div class="user-menu-divider"></div>
         <button class="user-menu-item user-menu-item--signout" (click)="logout()">Sair</button>
@@ -90,8 +90,8 @@
   <a routerLink="/resumo" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Resumo</a>
   <a routerLink="/medianas" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Medianas</a>
   <div class="mobile-nav-divider"></div>
-  <a routerLink="/carteira" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Carteira de Investimentos</a>
   <a routerLink="/investimentos" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Meus Investimentos</a>
+  <a routerLink="/simulacao" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Simulação</a>
   <a routerLink="/account/settings" routerLinkActive="active" class="nav-link" (click)="closeMobileMenu()">Configurações</a>
   <div class="mobile-nav-divider"></div>
   <button class="btn-signout--mobile" (click)="logout()">Sair</button>

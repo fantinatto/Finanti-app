@@ -5,10 +5,12 @@ import { SharedModule } from '../../../shared/shared.module';
 import { AccountRoutingModule } from './account-routing.module';
 
 import { AccountSettingsComponent } from '../account-settings/account-settings.component';
+import { CarteiraComponent } from '../carteira/carteira.component';
 
 @NgModule({
   declarations: [
     AccountSettingsComponent,
+    CarteiraComponent,
   ],
   imports: [
     CommonModule,

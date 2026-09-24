@@ -3,8 +3,46 @@
   <!-- ── Cabeçalho ──────────────────────────────────────────────────────────── -->
   <div class="investimentos-header">
     <div class="investimentos-title-group">
-      <h1>Meus Investimentos</h1>
-      <p>Cadastre suas posições reais (ações, FIIs e renda fixa) pra acompanhar o ganho mês a mês contra a cotação do ranking.</p>
+      <h1>Simulação de Carteira</h1>
+      <p>Comece com uma cópia da sua carteira real e siga as recomendações à risca — a ideia é validar,
+        mês a mês, se seguir o motor de score teria dado resultado.</p>
+    </div>
+  </div>
+
+  <!-- ── Painel da simulação (aporte semanal + reiniciar) ──────────────────── -->
+  <div class="simulacao-config-card">
+    <div class="simulacao-config-card__bloco">
+      <label>Aporte semanal (mesmo valor da vida real)</label>
+      <div class="simulacao-config-card__linha">
+        <input type="number" [(ngModel)]="aporteSemanalForm" min="0" step="0.01" placeholder="0,00" />
+        <button class="btn-primario" [disabled]="salvandoConfig" (click)="salvarAporteSemanal()">
+          {{ salvandoConfig ? 'Salvando...' : 'Salvar' }}
+        </button>
+      </div>
+      <small *ngIf="config.ultimoAporteAplicadoEm">Último aporte aplicado em {{ config.ultimoAporteAplicadoEm | date:'dd/MM/yyyy' }}</small>
+      <small *ngIf="!config.ultimoAporteAplicadoEm && config.simulacaoIniciadaEm">Simulação iniciada em {{ config.simulacaoIniciadaEm | date:'dd/MM/yyyy' }}</small>
+    </div>
+
+    <div class="simulacao-config-card__bloco" *ngIf="config.caixaDisponivel > 0">
+      <label>Caixa disponível</label>
+      <span class="simulacao-config-card__caixa">{{ formatMoeda(config.caixaDisponivel) }}</span>
+      <small>Apurado em vendas sem troca associada (redução de risco) — ainda não reinvestido.</small>
+    </div>
+
+    <div class="simulacao-config-card__acoes">
+      <button class="btn-secundario" *ngIf="config.caixaDisponivel > 0" [disabled]="investindoCaixa" (click)="investirCaixa()">
+        {{ investindoCaixa ? 'Investindo...' : 'Investir caixa' }}
+      </button>
+      <button class="btn-secundario" [disabled]="aplicandoAporte || !config.aporteSemanalValor" (click)="aplicarAporte()">
+        {{ aplicandoAporte ? 'Aplicando...' : 'Aplicar aporte semanal' }}
+      </button>
+
+      <button class="btn-perigo" *ngIf="!confirmandoReinicio" (click)="pedirConfirmacaoReinicio()">Reiniciar simulação</button>
+      <div class="confirmacao-reinicio" *ngIf="confirmandoReinicio">
+        <span>Isso apaga toda a simulação e clona a carteira real de novo. Tem certeza?</span>
+        <button class="btn-perigo" [disabled]="reiniciando" (click)="confirmarReinicio()">{{ reiniciando ? 'Reiniciando...' : 'Sim, reiniciar' }}</button>
+        <button class="btn-secundario" [disabled]="reiniciando" (click)="cancelarReinicio()">Cancelar</button>
+      </div>
     </div>
   </div>
 
@@ -78,14 +116,14 @@
   <!-- ── Loading ────────────────────────────────────────────────────────────── -->
   <div class="estado-loading" *ngIf="carregando">
     <div class="spinner-lg"></div>
-    <span>Carregando investimentos...</span>
+    <span>Carregando simulação...</span>
   </div>
 
   <!-- ── Empty state ────────────────────────────────────────────────────────── -->
   <div class="estado-vazio" *ngIf="!carregando && !investimentos.length">
-    <div class="estado-vazio__icon">💼</div>
-    <h3>Nenhum investimento cadastrado</h3>
-    <p>Use o formulário acima pra registrar suas posições.</p>
+    <div class="estado-vazio__icon">🧪</div>
+    <h3>Simulação vazia</h3>
+    <p>Clique em "Reiniciar simulação" acima pra clonar sua carteira real como ponto de partida.</p>
   </div>
 
   <!-- ── Tabela ─────────────────────────────────────────────────────────────── -->
@@ -136,13 +174,12 @@
     </table>
   </div>
 
-  <!-- ── Ranking das ações da carteira + recomendações ──────────────────────── -->
+  <!-- ── Ranking das ações da simulação + recomendações executáveis ─────────── -->
   <div class="ranking-carteira-card" *ngIf="!carregando && acoesInvestidas.length">
     <h2 class="ranking-carteira-card__titulo">Ranking das suas ações</h2>
     <p class="ranking-carteira-card__aviso">
-      Score do mês selecionado pra cada ação da carteira. Sugestões de troca comparam com o resto do setor;
-      sugestões de rebalanceamento comparam a alocação real do setor contra o alvo configurado em
-      <a routerLink="/carteira">Carteira</a>.
+      Clique em "Executar" pra aplicar à risca uma recomendação de venda/troca. Recomendações de aporte
+      (sem venda associada) só se aplicam via "Aplicar aporte semanal" acima.
     </p>
 
     <div class="estado-loading" *ngIf="carregandoRecomendacoes">
@@ -163,6 +200,7 @@
             <th class="col-num">Preço</th>
             <th class="col-prioridade">Prioridade</th>
             <th class="col-recomendacao">Recomendação</th>
+            <th class="col-executar"></th>
           </tr>
         </thead>
         <tbody>
@@ -194,6 +232,23 @@
                 </span>
               </div>
             </td>
+            <td class="col-executar" *ngIf="recomendacaoDe(inv.id) as rec">
+              <button
+                class="btn-executar"
+                *ngIf="categoriaExecutavel(rec.categoriaAcao)"
+                [disabled]="executandoId === inv.id"
+                (click)="executarRecomendacao(inv.id)"
+              >
+                {{ executandoId === inv.id ? 'Executando...' : 'Executar' }}
+              </button>
+              <span
+                class="executar-desabilitado"
+                *ngIf="rec.categoriaAcao !== 'manter' && !categoriaExecutavel(rec.categoriaAcao)"
+                title='Essa recomendação orienta pra onde direcionar seu próximo aporte — use "Aplicar aporte semanal".'
+              >
+                —
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -202,7 +257,7 @@
 
   <!-- ── Gráfico de evolução ────────────────────────────────────────────────── -->
   <div class="historico-card" *ngIf="historico.length">
-    <h2 class="historico-card__titulo">Evolução da carteira</h2>
+    <h2 class="historico-card__titulo">Evolução da simulação</h2>
     <canvas baseChart [data]="chartData" [options]="chartOptions" type="line"></canvas>
   </div>
 

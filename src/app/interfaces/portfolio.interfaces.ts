@@ -20,6 +20,8 @@ export interface PortfolioConfig {
   regraSelecionada: RegraSelecionada | null;
   baseRegraCustom: number | null;
   tipoRankingRecomendacao: TipoRankingRecomendacao;
+  /** false = recomendações e execuções na Simulação só operam em múltiplos de 100 ações (lote-padrão B3). */
+  permiteFracionario: boolean;
   alocacoesSetor: { id: string; setor: string; percentual: number }[];
   alocacoesSegmentoFii: { id: string; segmento: string; percentual: number }[];
 }
@@ -32,6 +34,7 @@ export interface UpsertPortfolioConfigPayload {
   regraSelecionada?: RegraSelecionada;
   baseRegraCustom?: number;
   tipoRankingRecomendacao?: TipoRankingRecomendacao;
+  permiteFracionario?: boolean;
   alocacoesSetor: AlocacaoItem[];
   alocacoesSegmentoFii: AlocacaoItem[];
 }
@@ -46,6 +49,8 @@ export interface SugestaoRegra {
 
 export type TipoInvestimento = 'acao' | 'fii' | 'renda_fixa';
 
+export type TipoCarteira = 'real' | 'simulacao';
+
 export interface Investimento {
   id: string;
   tipo: TipoInvestimento;
@@ -53,6 +58,7 @@ export interface Investimento {
   nome: string;
   precoMedio: number;
   quantidade: number;
+  carteira: TipoCarteira;
 }
 
 export interface UpsertInvestimentoPayload {
@@ -107,4 +113,6 @@ export interface RecomendacaoHolding {
   sugestaoRebalanceamento: 'comprar' | 'vender' | null;
   /** Valor em R$ pra aproximar o setor do alvo — quanto vender ou comprar. Null sem sugestão. */
   valorSugerido: number | null;
+  /** Prioridade de execução (backend já ordena a lista por isso) — null só em categoriaAcao='manter'. */
+  prioridade: 'alta' | 'media' | 'baixa' | null;
 }
