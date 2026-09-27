@@ -1,0 +1,165 @@
+<div class="fiscal-layout">
+  <div class="fiscal-header">
+    <h1>Fiscal (MVP)</h1>
+    <p>
+      Registro manual de operações reais (compra/venda) e apuração de ganho/prejuízo mensal por
+      bucket fiscal (comum, day trade, FII/Fiagro), com compensação de prejuízo e isenção de
+      R$20 mil pra ações comuns. <strong>Não calcula DARF nem gera declaração de IR ainda</strong> —
+      confira sempre contra a apuração oficial (ReVar) antes de decidir algo com dinheiro real.
+    </p>
+  </div>
+
+  <div class="form-card">
+    <h2 class="form-card__titulo">{{ editandoId ? 'Editar operação' : 'Registrar operação' }}</h2>
+    <form (ngSubmit)="salvar()">
+      <div class="form-grid">
+        <div class="campo">
+          <label>Data</label>
+          <input type="date" name="data" [(ngModel)]="form.data" required />
+        </div>
+        <div class="campo">
+          <label>Ticker</label>
+          <input type="text" name="ticker" [(ngModel)]="form.ticker" placeholder="PETR4" required />
+        </div>
+        <div class="campo">
+          <label>Tipo de ativo</label>
+          <select name="assetType" [(ngModel)]="form.assetType">
+            <option value="acao">Ação</option>
+            <option value="fii">FII</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Operação</label>
+          <select name="tipo" [(ngModel)]="form.tipo">
+            <option value="compra">Compra</option>
+            <option value="venda">Venda</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Modalidade</label>
+          <select name="tradeType" [(ngModel)]="form.tradeType">
+            <option value="swing">Swing / comum</option>
+            <option value="day_trade">Day trade</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Quantidade</label>
+          <input type="number" name="quantidade" [(ngModel)]="form.quantidade" min="0.0001" step="any" required />
+        </div>
+        <div class="campo">
+          <label>Preço unitário</label>
+          <input type="number" name="precoUnitario" [(ngModel)]="form.precoUnitario" min="0" step="any" required />
+        </div>
+        <div class="campo">
+          <label>Custos (corretagem etc.)</label>
+          <input type="number" name="custos" [(ngModel)]="form.custos" min="0" step="any" placeholder="0" />
+        </div>
+      </div>
+
+      <p class="form-erro" *ngIf="erro">{{ erro }}</p>
+
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" *ngIf="editandoId" (click)="cancelarEdicao()">Cancelar</button>
+        <button type="submit" class="btn-primario" [disabled]="salvando">
+          {{ editandoId ? 'Salvar alterações' : 'Registrar operação' }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="resumo-bar">
+    <div class="resumo-bar__item resumo-bar__mes">
+      <label>Ano</label>
+      <select [(ngModel)]="anoSelecionado" (ngModelChange)="onAnoChange()">
+        <option *ngFor="let a of anosDisponiveis" [value]="a">{{ a }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="estado-loading" *ngIf="carregandoOperacoes">
+    <div class="spinner-lg"></div>
+    <span>Carregando operações...</span>
+  </div>
+
+  <div class="operacoes-table-wrap" *ngIf="!carregandoOperacoes">
+    <div class="estado-vazio" *ngIf="operacoes.length === 0">
+      <div class="estado-vazio__icon">🧾</div>
+      <h3>Nenhuma operação registrada em {{ anoSelecionado }}</h3>
+      <p>Use o formulário acima pra registrar as compras e vendas reais do ano.</p>
+    </div>
+
+    <table class="operacoes-table" *ngIf="operacoes.length > 0">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Ticker</th>
+          <th>Ativo</th>
+          <th>Operação</th>
+          <th>Modalidade</th>
+          <th class="col-num">Quantidade</th>
+          <th class="col-num">Preço</th>
+          <th class="col-num">Custos</th>
+          <th class="col-num">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let op of operacoes">
+          <td>{{ op.data.slice(0, 10) }}</td>
+          <td><span class="ticker-badge">{{ op.ticker }}</span></td>
+          <td>{{ op.assetType === 'acao' ? 'Ação' : 'FII' }}</td>
+          <td>{{ op.tipo === 'compra' ? 'Compra' : 'Venda' }}</td>
+          <td>{{ op.tradeType === 'day_trade' ? 'Day trade' : 'Swing' }}</td>
+          <td class="col-num">{{ op.quantidade }}</td>
+          <td class="col-num">{{ op.precoUnitario | currency: 'BRL' }}</td>
+          <td class="col-num">{{ op.custos | currency: 'BRL' }}</td>
+          <td class="col-num">{{ op.quantidade * op.precoUnitario | currency: 'BRL' }}</td>
+          <td class="operacoes-table__acoes">
+            <button class="btn-icone" title="Editar" (click)="editar(op)">✎</button>
+            <button class="btn-icone btn-icone--remover" title="Remover" (click)="remover(op)">🗑</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="apuracao-section" *ngIf="apuracao && !carregandoApuracao">
+    <div class="bucket-card" *ngFor="let bucket of buckets">
+      <h2 class="bucket-card__titulo">{{ bucketLabel(bucket) }}</h2>
+      <div class="bucket-table-wrap">
+        <table class="bucket-table">
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th class="col-num">Vendas</th>
+              <th class="col-num">Resultado bruto</th>
+              <th class="col-num">Prejuízo compensado</th>
+              <th class="col-num">Resultado após compensação</th>
+              <th class="col-num">Prejuízo acumulado</th>
+              <th>Isenção</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of mesesDoBucket(bucket)">
+              <td>{{ nomeMes(m.anoMes) }}</td>
+              <td class="col-num">{{ m.totalVendas | currency: 'BRL' }}</td>
+              <td class="col-num" [ngClass]="resultadoClass(m.resultadoBruto)">{{ m.resultadoBruto | currency: 'BRL' }}</td>
+              <td class="col-num">{{ m.prejuizoCompensado | currency: 'BRL' }}</td>
+              <td class="col-num" [ngClass]="resultadoClass(m.resultadoAposCompensacao)">
+                {{ m.resultadoAposCompensacao | currency: 'BRL' }}
+              </td>
+              <td class="col-num">{{ m.prejuizoAcumuladoFinal | currency: 'BRL' }}</td>
+              <td>
+                <span class="badge-isento" *ngIf="m.isento">Isento</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="avisos-fiscais" *ngIf="apuracao.avisos.length > 0">
+      <p *ngFor="let aviso of apuracao.avisos">⚠️ {{ aviso }}</p>
+    </div>
+  </div>
+</div>

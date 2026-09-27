@@ -20,6 +20,10 @@ export interface RankingItem {
   /** scoreFinal 100% baseado nos deltas (qualidadeDelta + riscoDelta puro + precoDelta) —
    * pra comparar as duas metodologias de normalização lado a lado. */
   scoreFinalDelta: number | null;
+  /** Só preenchido no ranking por Segmento — 'setor_fallback' quando o segmento da ação tem
+   * menos de 3 comparáveis (os campos de score acima já vêm do Setor nesse caso, pra não expor
+   * o score fixo/sem sentido de um segmento com 1-2 empresas). Null nos rankings Setor/Geral. */
+  origemScore?: 'segmento' | 'setor_fallback' | null;
 }
 
 export interface IndicadorBruto {
@@ -112,4 +116,13 @@ export interface HistoricoRankingItem {
   anoMes: string;
   nomeGrupo: string;
   mediaTop3: number;
+}
+
+/** Resultado do search-help de ticker (autocomplete no formulário de Comprar). precoFechamento é
+ * o último fechamento conhecido (mesmo anoMes usado em calcularGanhos), não cotação em tempo real. */
+export interface TickerBusca {
+  ticker: string;
+  nome: string;
+  precoFechamento: number | null;
+  anoMes: string | null;
 }

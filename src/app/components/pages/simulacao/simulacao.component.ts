@@ -4,12 +4,20 @@ import { SimulacaoService } from '../../../services/simulacao.service';
 import { MarketDataService } from '../../../services/market-data.service';
 import { HistoricoCarteiraService } from '../../../services/historico-carteira.service';
 import { TipoCarteira } from '../../../interfaces/portfolio.interfaces';
-import { SimulacaoConfig } from '../../../interfaces/simulacao.interfaces';
+import { SimulacaoConfig, TransacaoSimulacao } from '../../../interfaces/simulacao.interfaces';
 import { CarteiraApi, CarteiraBaseComponent } from '../investimentos/carteira-base.component';
 
-/** Únicas categorias de recomendação com venda real — aporte_direcionado/aportar orientam o
- * PRÓXIMO aporte, não uma venda da posição de hoje (ver plano da feature). */
+/** Únicas categorias de recomendação com venda real — 'aportar' orienta o PRÓXIMO aporte, não
+ * uma venda da posição de hoje (ver plano da feature). */
 const CATEGORIAS_EXECUTAVEIS: ReadonlySet<string> = new Set(['venda_prioritaria', 'reducao_risco', 'troca_sugerida']);
+
+const LABEL_ORIGEM: Record<TransacaoSimulacao['origem'], string> = {
+  manual: 'Manual',
+  recomendacao: 'Recomendação',
+  aporte_semanal: 'Aporte semanal',
+  caixa: 'Investir caixa',
+  reinicio: 'Reinício',
+};
 
 @Component({
   selector: 'app-simulacao',
@@ -30,6 +38,16 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
   executandoId: string | null = null;
   confirmandoReinicio = false;
 
+  /** Lucro/prejuízo já apurado em vendas (ver TransacaoSimulacao.ganhoRealizado) — sem isso, o
+   * "Ganho" do resumo (não-realizado, baseado só nas posições atuais) não refletia o lucro de
+   * uma venda depois que o dinheiro era reinvestido (o novo precoMedio reseta o ganho embutido). */
+  ganhoRealizado = 0;
+
+  /** Log de tudo que já foi feito na simulação (mais recente primeiro) — pra o usuário replicar
+   * manualmente na carteira real (ex: "comprou 100 ações de VULC3"). */
+  transacoes: TransacaoSimulacao[] = [];
+  carregandoTransacoes = false;
+
   constructor(
     private simulacaoService: SimulacaoService,
     marketData: MarketDataService,
@@ -43,6 +61,41 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
   override ngOnInit(): void {
     super.ngOnInit();
     this.carregarConfig();
+    this.carregarGanhoRealizado();
+    this.carregarTransacoes();
+  }
+
+  /** Venda manual credita caixaDisponivel e ganhoRealizado (ver SimulacaoService.venderManual) —
+   * atualiza os dois cards, mesma reação que executarRecomendacao já dispara. Também gera uma
+   * TransacaoSimulacao, então atualiza o log também. */
+  protected override onVendaRegistrada(): void {
+    this.carregarConfig();
+    this.carregarGanhoRealizado();
+    this.carregarTransacoes();
+  }
+
+  /** Compra manual ("Adicionar") debita caixaDisponivel e registra uma TransacaoSimulacao — ver
+   * SimulacaoService.criar. */
+  protected override onInvestimentoCriado(): void {
+    this.carregarConfig();
+    this.carregarTransacoes();
+  }
+
+  carregarGanhoRealizado(): void {
+    this.simulacaoService.getGanhoRealizado().subscribe({
+      next: (res) => { this.ganhoRealizado = res.ganhoRealizado; },
+    });
+  }
+
+  carregarTransacoes(): void {
+    this.carregandoTransacoes = true;
+    this.simulacaoService.listarTransacoes().subscribe({
+      next: (dados) => {
+        this.transacoes = dados;
+        this.carregandoTransacoes = false;
+      },
+      error: () => { this.carregandoTransacoes = false; },
+    });
   }
 
   carregarConfig(): void {
@@ -92,6 +145,8 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
         this.carregarInvestimentos();
         this.carregarConfig();
         this.carregarHistorico();
+        this.carregarGanhoRealizado();
+        this.carregarTransacoes(); // reiniciar apaga TransacaoSimulacao — log some/some zera
       },
       error: (err) => {
         this.toastr.error(err?.error?.message ?? 'Não foi possível reiniciar a simulação', 'Erro');
@@ -113,6 +168,7 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
         this.aplicandoAporte = false;
         this.carregarInvestimentos();
         this.carregarConfig();
+        this.carregarTransacoes();
       },
       error: (err) => {
         this.toastr.error(err?.error?.message ?? 'Não foi possível aplicar o aporte semanal', 'Erro');
@@ -130,6 +186,7 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
         this.investindoCaixa = false;
         this.carregarInvestimentos();
         this.carregarConfig();
+        this.carregarTransacoes();
       },
       error: (err) => {
         this.toastr.error(err?.error?.message ?? 'Não foi possível investir o caixa', 'Erro');
@@ -142,6 +199,10 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
     return CATEGORIAS_EXECUTAVEIS.has(categoria);
   }
 
+  origemLabel(origem: TransacaoSimulacao['origem']): string {
+    return LABEL_ORIGEM[origem] ?? origem;
+  }
+
   executarRecomendacao(investimentoId: string): void {
     if (!this.anoMesSelecionado || this.executandoId) return;
     this.executandoId = investimentoId;
@@ -151,6 +212,8 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
         this.executandoId = null;
         this.carregarInvestimentos();
         this.carregarConfig(); // reducao_risco credita caixaDisponivel — atualiza o card
+        this.carregarGanhoRealizado(); // toda venda apura ganho/prejuízo — ver ganhoRealizado
+        this.carregarTransacoes();
       },
       error: (err) => {
         this.toastr.error(err?.error?.message ?? 'Não foi possível executar a recomendação', 'Erro');

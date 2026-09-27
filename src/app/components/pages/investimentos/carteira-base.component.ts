@@ -1,14 +1,18 @@
-import { Directive, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Directive, OnDestroy, OnInit } from '@angular/core';
+import { Observable, of, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { ToastrService } from 'ngx-toastr';
 import { MarketDataService } from '../../../services/market-data.service';
 import { HistoricoCarteiraService } from '../../../services/historico-carteira.service';
+import { TickerBusca } from '../../../interfaces/market-data.interfaces';
 import {
+  BalanceamentoSetor,
   CategoriaAcao,
   GanhoInvestimento,
   Investimento,
   RecomendacaoHolding,
+  SaudeCarteira,
   TipoCarteira,
   TipoInvestimento,
   UpsertInvestimentoPayload,
@@ -19,11 +23,20 @@ import { HistoricoCarteira } from '../../../interfaces/simulacao.interfaces';
  * "carteira real" e "carteira de simulação" como a mesma tela, injetando o service certo. */
 export interface CarteiraApi {
   listarInvestimentos(): Observable<Investimento[]>;
-  criarInvestimento(payload: UpsertInvestimentoPayload): Observable<Investimento>;
+  /** anoMes só é usado pela Simulação (carimba a TransacaoSimulacao do log de operações) — a
+   * carteira real ignora o parâmetro. */
+  criarInvestimento(payload: UpsertInvestimentoPayload, anoMes?: string): Observable<Investimento>;
   atualizarInvestimento(id: string, payload: UpsertInvestimentoPayload): Observable<Investimento>;
   removerInvestimento(id: string): Observable<{ ok: boolean }>;
+  /** anoMes só é usado pela Simulação (apura ganho realizado/caixa pela cotação do mês) — a
+   * carteira real ignora o parâmetro, só ajusta a quantidade. precoVenda/custosFiscais só têm
+   * efeito na carteira real (espelha a venda como OperacaoFiscal) — a Simulação os ignora, já
+   * tem seu próprio fluxo de ganho realizado baseado na cotação do anoMes. */
+  venderInvestimento(id: string, quantidade: number, anoMes?: string, precoVenda?: number, custosFiscais?: number): Observable<unknown>;
   getGanhosInvestimentos(anoMes: string): Observable<GanhoInvestimento[]>;
   getRecomendacoesInvestimentos(anoMes: string): Observable<RecomendacaoHolding[]>;
+  getBalanceamentoInvestimentos(anoMes: string): Observable<BalanceamentoSetor[]>;
+  getSaudeInvestimentos(anoMes: string): Observable<SaudeCarteira>;
 }
 
 const LABEL_TIPO: Record<TipoInvestimento, string> = {
@@ -34,11 +47,11 @@ const LABEL_TIPO: Record<TipoInvestimento, string> = {
 
 /** Rótulo + classe de cor do badge — 1:1 com a categoria que o backend já decidiu (matriz de decisão em investimento.service.ts). */
 const CATEGORIA_META: Record<CategoriaAcao, { label: string; classe: string }> = {
-  aporte_direcionado: { label: 'Aporte direcionado', classe: 'cat--aporte' },
   aportar: { label: 'Aportar', classe: 'cat--aporte' },
   troca_sugerida: { label: 'Troca sugerida', classe: 'cat--troca' },
   venda_prioritaria: { label: 'Venda prioritária', classe: 'cat--venda' },
   reducao_risco: { label: 'Redução de risco', classe: 'cat--venda' },
+  aguardar_caixa: { label: 'Aguardar caixa', classe: 'cat--manter' },
   manter: { label: 'Manter', classe: 'cat--manter' },
 };
 
@@ -49,15 +62,39 @@ const PRIORIDADE_META: Record<'alta' | 'media' | 'baixa', { label: string; class
   baixa: { label: 'Baixa', classe: 'prio--baixa' },
 };
 
+/** Rótulo + classe do badge de status de balanceamento por setor — 1:1 com BalanceamentoSetor.status. */
+const STATUS_SETOR_META: Record<BalanceamentoSetor['status'], { label: string; classe: string }> = {
+  sobrealocado: { label: 'Sobrealocado', classe: 'status--sobrealocado' },
+  subalocado: { label: 'Subalocado', classe: 'status--subalocado' },
+  equilibrado: { label: 'Equilibrado', classe: 'status--equilibrado' },
+};
+
 interface FormInvestimento {
   tipo: TipoInvestimento;
   ticker: string;
   nome: string;
   precoMedio: number | null;
   quantidade: number | null;
+  /** Só usado (e exibido) na carteira REAL — ver comentário do campo em UpsertInvestimentoDto. */
+  registrarFiscal: boolean;
+  dataOperacao: string;
+  custosFiscais: number | null;
 }
 
-const FORM_VAZIO: FormInvestimento = { tipo: 'acao', ticker: '', nome: '', precoMedio: null, quantidade: null };
+/** Função (não const) pra `dataOperacao` sempre nascer com o dia de hoje, nunca a data em que o
+ * bundle foi servido. */
+function formVazio(): FormInvestimento {
+  return {
+    tipo: 'acao',
+    ticker: '',
+    nome: '',
+    precoMedio: null,
+    quantidade: null,
+    registrarFiscal: true,
+    dataOperacao: new Date().toISOString().slice(0, 10),
+    custosFiscais: null,
+  };
+}
 
 /**
  * Base compartilhada por /investimentos (carteira real) e /simulacao (carteira de simulação) —
@@ -67,7 +104,7 @@ const FORM_VAZIO: FormInvestimento = { tipo: 'acao', ticker: '', nome: '', preco
  * executar/aporte/reiniciar por cima do que já existe aqui).
  */
 @Directive()
-export abstract class CarteiraBaseComponent implements OnInit {
+export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
   abstract readonly carteira: TipoCarteira;
   protected abstract readonly api: CarteiraApi;
 
@@ -79,20 +116,31 @@ export abstract class CarteiraBaseComponent implements OnInit {
   acoesInvestidas: Investimento[] = [];
   ganhos: GanhoInvestimento[] = [];
   recomendacoes: RecomendacaoHolding[] = [];
+  balanceamento: BalanceamentoSetor[] = [];
+  saude: SaudeCarteira | null = null;
   historico: HistoricoCarteira[] = [];
 
   meses: string[] = [];
   anoMesSelecionado = '';
 
-  form: FormInvestimento = { ...FORM_VAZIO };
+  form: FormInvestimento = formVazio();
   editandoId: string | null = null;
+
+  /** Search-help do campo Ticker (autocomplete) — só cobre tipo 'acao' (única fonte com
+   * fundamentos ingeridos, ver Acao/IndicadorMensal). Debounce evita 1 request por tecla. */
+  resultadosBuscaTicker: TickerBusca[] = [];
+  buscandoTicker = false;
+  private buscaTicker$ = new Subject<string>();
 
   carregando = false;
   carregandoGanhos = false;
   carregandoRecomendacoes = false;
+  carregandoBalanceamento = false;
+  carregandoSaude = false;
   carregandoHistorico = false;
   salvando = false;
   removendoId: string | null = null;
+  vendendoId: string | null = null;
 
   constructor(
     protected marketData: MarketDataService,
@@ -112,6 +160,24 @@ export abstract class CarteiraBaseComponent implements OnInit {
         }
       },
     });
+
+    this.buscaTicker$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((termo) => (termo.trim().length >= 2 ? this.marketData.buscarTickers(termo) : of([]))),
+      )
+      .subscribe({
+        next: (resultados) => {
+          this.resultadosBuscaTicker = resultados;
+          this.buscandoTicker = false;
+        },
+        error: () => { this.buscandoTicker = false; },
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.buscaTicker$.complete();
   }
 
   carregarInvestimentos(): void {
@@ -151,6 +217,24 @@ export abstract class CarteiraBaseComponent implements OnInit {
         this.carregandoRecomendacoes = false;
       },
       error: () => { this.carregandoRecomendacoes = false; },
+    });
+
+    this.carregandoBalanceamento = true;
+    this.api.getBalanceamentoInvestimentos(this.anoMesSelecionado).subscribe({
+      next: (dados) => {
+        this.balanceamento = dados;
+        this.carregandoBalanceamento = false;
+      },
+      error: () => { this.carregandoBalanceamento = false; },
+    });
+
+    this.carregandoSaude = true;
+    this.api.getSaudeInvestimentos(this.anoMesSelecionado).subscribe({
+      next: (dados) => {
+        this.saude = dados;
+        this.carregandoSaude = false;
+      },
+      error: () => { this.carregandoSaude = false; },
     });
   }
 
@@ -200,19 +284,31 @@ export abstract class CarteiraBaseComponent implements OnInit {
     return prioridade ? PRIORIDADE_META[prioridade].classe : 'prio--vazia';
   }
 
+  statusSetorLabel(status: BalanceamentoSetor['status']): string {
+    return STATUS_SETOR_META[status].label;
+  }
+
+  statusSetorClasse(status: BalanceamentoSetor['status']): string {
+    return STATUS_SETOR_META[status].classe;
+  }
+
   /** Texto da recomendação — junta troca (se houver) e valor de rebalanceamento (se houver) numa frase só. */
   textoRecomendacao(r: RecomendacaoHolding): string {
     const valor = r.valorSugerido != null ? this.formatMoeda(Math.abs(r.valorSugerido)) : null;
+    // Quantidade já vem pronta do backend (mesma unidade lote/fracionário que seria executada) —
+    // evita recalcular no front dividindo valor por cotação, que exigiria buscar a cotação de
+    // novo e podia divergir do arredondamento já aplicado no servidor.
+    const qtd = r.quantidadeSugerida != null ? ` (${r.quantidadeSugerida})` : '';
 
     if (r.sugestaoTroca) {
+      // troca_sugerida é sempre migração de 100% da posição — sem valor parcial associado, mesmo
+      // quando o setor ainda está subalocado (ver motivoTroca pro aviso de que o déficit continua).
       const alvo = `${r.sugestaoTroca.ticker} (${this.formatScore(r.sugestaoTroca.scoreFinal)})`;
-      if (r.categoriaAcao === 'aporte_direcionado') return `Comprar ${alvo} · ${valor}`;
-      if (r.categoriaAcao === 'venda_prioritaria') return `Vender ${valor} — migrar para ${alvo}`;
-      return `Migrar para ${alvo}`; // troca_sugerida — sem valor de rebalanceamento associado
+      return `Migrar para ${alvo}`;
     }
 
-    if (r.sugestaoRebalanceamento === 'comprar') return `Comprar ${valor}`;
-    if (r.sugestaoRebalanceamento === 'vender') return `Vender ${valor}`;
+    if (r.sugestaoRebalanceamento === 'comprar') return `Comprar ${valor}${qtd}`;
+    if (r.sugestaoRebalanceamento === 'vender') return `Vender ${valor}${qtd}`;
     return '—';
   }
 
@@ -234,20 +330,52 @@ export abstract class CarteiraBaseComponent implements OnInit {
     );
   }
 
+  /** Disparado no (input) do campo Ticker — dispara a busca via Subject debounced. */
+  onTickerInput(valor: string): void {
+    this.form.ticker = valor;
+    if (this.form.tipo !== 'acao') return; // só ações têm fundamentos ingeridos (ver Acao)
+    this.buscandoTicker = valor.trim().length >= 2;
+    this.buscaTicker$.next(valor);
+  }
+
+  /** Preenche nome e preço sugerido a partir do resultado escolhido — preço fica editável em
+   * seguida (é o preço de fechamento mais recente conhecido, não necessariamente o preço real
+   * que o usuário pagou na compra). */
+  selecionarTicker(resultado: TickerBusca): void {
+    this.form.ticker = resultado.ticker;
+    this.form.nome = resultado.nome;
+    if (resultado.precoFechamento != null) this.form.precoMedio = resultado.precoFechamento;
+    this.resultadosBuscaTicker = [];
+  }
+
+  /** setTimeout pra deixar o (click) de selecionarTicker disparar antes do dropdown fechar
+   * (blur do input dispara antes do click no item da lista). */
+  fecharBuscaTicker(): void {
+    setTimeout(() => { this.resultadosBuscaTicker = []; }, 150);
+  }
+
   editar(inv: Investimento): void {
     this.editandoId = inv.id;
+    // Edição nunca espelha no Fiscal (ver comentário do campo no DTO) — é uma correção da
+    // posição, não necessariamente uma operação nova. registrarFiscal/dataOperacao/custosFiscais
+    // ficam nos valores padrão, sem efeito (o backend só lê esses campos em criarInvestimento).
     this.form = {
       tipo: inv.tipo,
       ticker: inv.ticker ?? '',
       nome: inv.nome,
       precoMedio: inv.precoMedio,
       quantidade: inv.quantidade,
+      registrarFiscal: false,
+      dataOperacao: new Date().toISOString().slice(0, 10),
+      custosFiscais: null,
     };
+    this.resultadosBuscaTicker = [];
   }
 
   cancelarEdicao(): void {
     this.editandoId = null;
-    this.form = { ...FORM_VAZIO };
+    this.form = formVazio();
+    this.resultadosBuscaTicker = [];
   }
 
   salvar(): void {
@@ -262,16 +390,26 @@ export abstract class CarteiraBaseComponent implements OnInit {
       quantidade: this.form.quantidade as number,
     };
 
-    const request = this.editandoId
-      ? this.api.atualizarInvestimento(this.editandoId, payload)
-      : this.api.criarInvestimento(payload);
+    // registrarFiscal só faz sentido na CRIAÇÃO da carteira REAL (edição é uma correção da
+    // posição, não uma operação nova — ver comentário do campo no DTO/backend).
+    if (!this.editandoId && this.carteira === 'real' && this.precisaTicker) {
+      payload.registrarFiscal = this.form.registrarFiscal;
+      payload.dataOperacao = this.form.dataOperacao;
+      payload.custosFiscais = this.form.custosFiscais ?? 0;
+    }
+
+    const eraEdicao = this.editandoId !== null;
+    const request = eraEdicao
+      ? this.api.atualizarInvestimento(this.editandoId as string, payload)
+      : this.api.criarInvestimento(payload, this.anoMesSelecionado);
 
     request.subscribe({
       next: () => {
-        this.toastr.success(this.editandoId ? 'Investimento atualizado' : 'Investimento cadastrado', 'Carteira');
+        this.toastr.success(eraEdicao ? 'Investimento atualizado' : 'Investimento cadastrado', 'Carteira');
         this.salvando = false;
         this.cancelarEdicao();
         this.carregarInvestimentos();
+        if (!eraEdicao) this.onInvestimentoCriado();
       },
       error: () => {
         this.toastr.error('Não foi possível salvar o investimento', 'Erro');
@@ -279,6 +417,11 @@ export abstract class CarteiraBaseComponent implements OnInit {
       },
     });
   }
+
+  /** Hook pra subclasses reagirem a uma criação nova (não edição) — Simulação sobrescreve pra
+   * atualizar caixaDisponivel/log de operações (SimulacaoService.criar debita caixa e registra
+   * TransacaoSimulacao quando a posição criada tem ticker). */
+  protected onInvestimentoCriado(): void {}
 
   remover(inv: Investimento): void {
     if (this.removendoId) return;
@@ -296,6 +439,62 @@ export abstract class CarteiraBaseComponent implements OnInit {
       },
     });
   }
+
+  /**
+   * Venda parcial/total — só ajusta a quantidade (real) ou, na Simulação, também registra
+   * transação/ganho realizado/caixa (ver SimulacaoService.venderManual). Usa prompt() em vez de
+   * um modal novo — ação pontual, não justifica um componente extra ainda.
+   */
+  vender(inv: Investimento): void {
+    if (this.vendendoId || !inv.ticker) return;
+
+    const entrada = window.prompt(`Quantas unidades de ${inv.ticker} você vendeu? (possui ${inv.quantidade})`, String(inv.quantidade));
+    if (entrada === null) return; // cancelado
+
+    const quantidade = Number(entrada.replace(',', '.'));
+    if (!quantidade || quantidade <= 0 || quantidade > inv.quantidade) {
+      this.toastr.error(`Quantidade inválida — você possui ${inv.quantidade} unidades`, 'Erro');
+      return;
+    }
+
+    // Só a carteira REAL pergunta o preço — a venda nunca é ambígua (é sempre uma operação de
+    // hoje), então já registra no Fiscal automaticamente se um preço válido for informado.
+    // Simulação já sabe a cotação pelo anoMes selecionado, não precisa perguntar nada.
+    let precoVenda: number | undefined;
+    if (this.carteira === 'real') {
+      const entradaPreco = window.prompt(
+        `Preço de venda por unidade de ${inv.ticker} (deixe em branco pra não registrar no Fiscal):`,
+      );
+      if (entradaPreco !== null && entradaPreco.trim() !== '') {
+        const precoNumerico = Number(entradaPreco.replace(',', '.'));
+        if (!precoNumerico || precoNumerico <= 0) {
+          this.toastr.error('Preço de venda inválido — venda não registrada.', 'Erro');
+          return;
+        }
+        precoVenda = precoNumerico;
+      }
+    }
+
+    this.vendendoId = inv.id;
+    this.api.venderInvestimento(inv.id, quantidade, this.anoMesSelecionado, precoVenda).subscribe({
+      next: () => {
+        const sufixoFiscal = precoVenda != null ? ' (também registrada no Fiscal)' : '';
+        this.toastr.success(`Venda de ${quantidade} ${inv.ticker} registrada${sufixoFiscal}`, 'Carteira');
+        this.vendendoId = null;
+        if (this.editandoId === inv.id) this.cancelarEdicao();
+        this.carregarInvestimentos();
+        this.onVendaRegistrada();
+      },
+      error: (err) => {
+        this.toastr.error(err?.error?.message ?? 'Não foi possível registrar a venda', 'Erro');
+        this.vendendoId = null;
+      },
+    });
+  }
+
+  /** Hook pra subclasses reagirem a uma venda manual — Simulação sobrescreve pra atualizar
+   * caixaDisponivel/ganhoRealizado (a venda credita os dois, ver SimulacaoService.venderManual). */
+  protected onVendaRegistrada(): void {}
 
   ganhoDe(id: string): GanhoInvestimento | null {
     return this.ganhos.find((g) => g.id === id) ?? null;

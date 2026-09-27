@@ -64,6 +64,16 @@
     <button type="button" class="btn-limpar-filtros" *ngIf="temFiltroAtivo" (click)="limparFiltros()">Limpar filtros</button>
 
     <span class="filtros-score-contagem">{{ itenOrdenados.length }} de {{ itens.length }} ações</span>
+
+    <button
+      type="button"
+      class="btn-exportar-excel"
+      [disabled]="exportandoExcel"
+      (click)="exportarExcel()"
+      title="Exporta exatamente as ações e colunas visíveis nessa tela, com o filtro e ordenação atuais"
+    >
+      {{ exportandoExcel ? 'Exportando...' : '⬇ Exportar Excel' }}
+    </button>
   </div>
 
   <!-- ── Loading ────────────────────────────────────────────────────────────── -->
@@ -102,6 +112,13 @@
             Score Final Δ
             <span class="sort-arrow" *ngIf="ordenarPor === 'scoreFinalDelta'">↓</span>
           </th>
+          <th
+            class="col-score col-score--divergencia"
+            *ngIf="mostrarColunasExperimentais"
+            title="Score Final Δ − Score Final Clássico. Divergência alta (|valor| > 0,30) indica que os dois métodos discordam bastante sobre essa ação — útil pra achar casos onde um dos dois está distorcido (ex: bancos, onde o Risco clássico historicamente diverge do Δ). Só diagnóstico, não é usado em nenhuma recomendação."
+          >
+            Divergência Δ
+          </th>
           <th class="col-score" (click)="ordenar('scoreQualidade')">
             Qualidade
             <span class="sort-arrow" *ngIf="ordenarPor === 'scoreQualidade'">↓</span>
@@ -135,6 +152,11 @@
           </td>
           <td class="col-fixed col-ticker">
             <span class="ticker-badge">{{ item.ticker }}</span>
+            <span
+              class="fallback-badge"
+              *ngIf="item.origemScore === 'setor_fallback'"
+              title="Segmento com menos de 3 empresas comparáveis — mostrando o score do Setor em vez do segmento (amostra pequena demais pra normalizar)"
+            >Setor*</span>
           </td>
           <td class="col-fixed col-nome">{{ item.nome }}</td>
           <td class="col-grupo" *ngIf="grupoSelecionado === TODOS_GRUPOS">{{ (tipoGrupo === 'segmento' ? item.segmento : item.setor) || '—' }}</td>
@@ -146,6 +168,15 @@
           <td class="col-score col-score--final" *ngIf="mostrarColunasExperimentais">
             <span class="score-badge score-badge--delta" [ngClass]="scoreClass(item.scoreFinalDelta)">
               {{ formatScore(item.scoreFinalDelta) }}
+            </span>
+          </td>
+          <td class="col-score col-score--divergencia" *ngIf="mostrarColunasExperimentais">
+            <span
+              class="divergencia-badge"
+              [class.divergencia-badge--alta]="divergenciaAlta(item)"
+              [title]="divergenciaAlta(item) ? 'Divergência alta — Δ e Clássico discordam bastante pra essa ação' : ''"
+            >
+              {{ formatDivergencia(item) }}
             </span>
           </td>
           <td class="col-score">

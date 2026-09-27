@@ -10,6 +10,7 @@ import {
   MedianaGrupo,
   RankingItem,
   ResumoColeta,
+  TickerBusca,
   Top3PorGrupo,
 } from '../interfaces/market-data.interfaces';
 
@@ -52,6 +53,10 @@ export class MarketDataService {
 
   previewTicker(ticker: string): Observable<unknown> {
     return this.http.get<unknown>(`/market-data/preview/${ticker}`);
+  }
+
+  buscarTickers(q: string): Observable<TickerBusca[]> {
+    return this.http.get<TickerBusca[]>('/market-data/tickers', { params: { q } });
   }
 
   getMedianas(tipoGrupo: string, anoMes: string): Observable<MedianaGrupo[]> {

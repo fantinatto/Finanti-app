@@ -199,6 +199,55 @@ export class RankingComponent implements OnInit {
     });
   }
 
+  exportandoExcel = false;
+
+  /** Exporta exatamente o que está na tela agora — mesmos filtros mínimos, mesma ordenação,
+   * mesmas colunas Δ visíveis (ou não). Client-side (SheetJS): os dados já estão carregados no
+   * componente, não precisa de round-trip com o backend nem de endpoint novo. Import dinâmico —
+   * a lib inteira tem ~1MB, carregar só no clique evita inflar o chunk da tela de Ranking. */
+  async exportarExcel(): Promise<void> {
+    const itens = this.itenOrdenados;
+    if (!itens.length || this.exportandoExcel) return;
+    this.exportandoExcel = true;
+
+    try {
+      const XLSX = await import('xlsx');
+      const colunaGrupo = this.tipoGrupo === 'segmento' ? 'Segmento' : 'Setor';
+
+      const linhas = itens.map((item, i) => {
+        const linha: Record<string, string | number> = {
+          '#': i + 1,
+          Ticker: item.ticker,
+          Nome: item.nome,
+          [colunaGrupo]: (this.tipoGrupo === 'segmento' ? item.segmento : item.setor) ?? '—',
+        };
+
+        // Só existe no ranking por Segmento — sinaliza quando o score veio do Setor por causa da
+        // amostra pequena (ver RankingQueryService.getScoresSegmentoComFallback).
+        if (this.tipoGrupo === 'segmento') {
+          linha['Origem do score'] = item.origemScore === 'setor_fallback' ? 'Setor (amostra pequena)' : 'Segmento';
+        }
+
+        for (const c of this.camposScoreVisiveis) {
+          const valor = item[c.campo];
+          linha[c.label] = valor !== null ? valor : '';
+        }
+
+        return linha;
+      });
+
+      const planilha = XLSX.utils.json_to_sheet(linhas);
+      const livro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(livro, planilha, 'Ranking');
+
+      const nomeArquivo = `ranking-${this.tipoGrupo}-${this.anoMesSelecionado || 'sem-mes'}.xlsx`;
+      XLSX.writeFile(livro, nomeArquivo);
+      this.toastr.success(`${itens.length} ações exportadas`, 'Ranking');
+    } finally {
+      this.exportandoExcel = false;
+    }
+  }
+
   dispararIngestion(): void {
     if (this.ingerindo) return;
     this.ingerindo = true;
@@ -224,6 +273,30 @@ export class RankingComponent implements OnInit {
 
   formatScore(score: number | null): string {
     return score !== null ? score.toFixed(4) : '—';
+  }
+
+  /**
+   * Score de Divergência — Score Final Δ menos o Clássico, só diagnóstico (não entra em
+   * nenhuma recomendação). Checado contra dados reais antes de fixar o limiar: 20,8% do
+   * universo passa de |0,30|, concentrado quase todo em bancos — esperado, é a mesma
+   * distorção do Risco clássico (dividaLiquidaPatrimonio com negativeIsGood) que já motivou o
+   * Δ virar principal nesse eixo. Não é sinal de erro, é o comparativo já fazendo seu trabalho.
+   */
+  readonly LIMIAR_DIVERGENCIA_ALTA = 0.30;
+
+  scoreDivergencia(item: RankingItem): number | null {
+    return item.scoreFinal !== null && item.scoreFinalDelta !== null ? item.scoreFinalDelta - item.scoreFinal : null;
+  }
+
+  divergenciaAlta(item: RankingItem): boolean {
+    const d = this.scoreDivergencia(item);
+    return d !== null && Math.abs(d) > this.LIMIAR_DIVERGENCIA_ALTA;
+  }
+
+  formatDivergencia(item: RankingItem): string {
+    const d = this.scoreDivergencia(item);
+    if (d === null) return '—';
+    return `${d >= 0 ? '+' : ''}${d.toFixed(4)}`;
   }
 
   formatMes(anoMes: string): string {

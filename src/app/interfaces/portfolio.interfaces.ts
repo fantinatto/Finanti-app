@@ -67,6 +67,11 @@ export interface UpsertInvestimentoPayload {
   nome: string;
   precoMedio: number;
   quantidade: number;
+  /** Só tem efeito na criação da carteira REAL — espelha a compra como uma OperacaoFiscal.
+   * Ignorado em edição e na Simulação (sem implicação fiscal). */
+  registrarFiscal?: boolean;
+  dataOperacao?: string;
+  custosFiscais?: number;
 }
 
 export interface GanhoInvestimento {
@@ -84,11 +89,11 @@ export interface GanhoInvestimento {
 }
 
 export type CategoriaAcao =
-  | 'aporte_direcionado'
   | 'aportar'
   | 'troca_sugerida'
   | 'venda_prioritaria'
   | 'reducao_risco'
+  | 'aguardar_caixa'
   | 'manter';
 
 export interface RecomendacaoHolding {
@@ -113,6 +118,33 @@ export interface RecomendacaoHolding {
   sugestaoRebalanceamento: 'comprar' | 'vender' | null;
   /** Valor em R$ pra aproximar o setor do alvo — quanto vender ou comprar. Null sem sugestão. */
   valorSugerido: number | null;
+  /** Quantidade de ações equivalente a valorSugerido, já arredondada pro lote/fracionário. Null sem sugestão. */
+  quantidadeSugerida: number | null;
   /** Prioridade de execução (backend já ordena a lista por isso) — null só em categoriaAcao='manter'. */
   prioridade: 'alta' | 'media' | 'baixa' | null;
+}
+
+export interface BalanceamentoSetor {
+  setor: string;
+  valorAtual: number;
+  percentualAtual: number;
+  percentualAlvo: number;
+  /** percentualAtual − percentualAlvo. Positivo = sobrealocado, negativo = subalocado. */
+  diferenca: number;
+  status: 'sobrealocado' | 'subalocado' | 'equilibrado';
+  /** true quando o setor tem alvo configurado mas ZERO ações hoje — "setor descoberto". */
+  semNenhumaAcao: boolean;
+}
+
+/** Qualidade/Risco/Preço/Final médios da carteira, ponderados pelo valor atual de cada posição. */
+export interface SaudeCarteira {
+  scoreQualidadeMedio: number | null;
+  riscoCompostoMedio: number | null;
+  scorePrecoMedio: number | null;
+  scoreFinalMedio: number | null;
+  pesoQualidade: number;
+  pesoRisco: number;
+  pesoPreco: number;
+  pesoFinal: number;
+  valorTotalCarteira: number;
 }

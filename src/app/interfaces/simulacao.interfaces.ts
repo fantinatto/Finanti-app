@@ -19,8 +19,10 @@ export interface TransacaoSimulacao {
   quantidade: number;
   preco: number;
   valor: number;
-  origem: 'recomendacao' | 'aporte_semanal' | 'reinicio' | 'caixa';
+  origem: 'recomendacao' | 'aporte_semanal' | 'reinicio' | 'caixa' | 'manual';
   motivo: string | null;
+  /** Só em vendas — lucro/prejuízo já apurado (valor da venda − custo ao precoMedio da época). Null em compras. */
+  ganhoRealizado: number | null;
   createdAt: string;
 }
 

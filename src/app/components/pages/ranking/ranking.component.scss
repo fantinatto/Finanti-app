@@ -251,6 +251,22 @@ $muted:    #6b7280;
   white-space: nowrap;
 }
 
+.btn-exportar-excel {
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  border: 1.5px solid $border;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #15803d;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) { background: #dcfce7; border-color: #15803d; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
 // ── Estado ────────────────────────────────────────────────────────────────────
 
 .estado-loading {
@@ -405,6 +421,20 @@ thead .col-fixed { background: #f8fafc; }
   letter-spacing: 0.05em;
 }
 
+.fallback-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.4rem;
+  background: #fef9c3;
+  color: #92400e;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: help;
+}
+
 .sort-arrow {
   font-size: 0.75rem;
   margin-left: 0.2rem;
@@ -431,6 +461,23 @@ thead .col-fixed { background: #f8fafc; }
   &--delta {
     background: transparent !important;
     border: 1.5px dashed currentColor;
+  }
+}
+
+.divergencia-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 48px;
+  text-align: center;
+  color: $muted;
+
+  &--alta {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
   }
 }
 

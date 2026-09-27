@@ -48,7 +48,7 @@
 
   <!-- ── Formulário ─────────────────────────────────────────────────────────── -->
   <div class="form-card">
-    <h2 class="form-card__titulo">{{ editandoId ? 'Editar investimento' : 'Adicionar investimento' }}</h2>
+    <h2 class="form-card__titulo">{{ editandoId ? 'Editar investimento' : 'Comprar (adicionar posição)' }}</h2>
 
     <div class="form-grid">
       <div class="campo">
@@ -60,9 +60,27 @@
         </select>
       </div>
 
-      <div class="campo" *ngIf="precisaTicker">
+      <div class="campo campo--ticker-busca" *ngIf="precisaTicker">
         <label>Ticker</label>
-        <input type="text" [(ngModel)]="form.ticker" placeholder="Ex: PETR4" maxlength="10" />
+        <input
+          type="text"
+          [ngModel]="form.ticker"
+          (ngModelChange)="onTickerInput($event)"
+          (blur)="fecharBuscaTicker()"
+          placeholder="Ex: PETR4"
+          maxlength="10"
+          autocomplete="off"
+        />
+        <span class="ticker-busca__spinner" *ngIf="buscandoTicker">Buscando...</span>
+        <ul class="ticker-busca__lista" *ngIf="resultadosBuscaTicker.length">
+          <li *ngFor="let r of resultadosBuscaTicker" (click)="selecionarTicker(r)">
+            <span class="ticker-busca__ticker">{{ r.ticker }}</span>
+            <span class="ticker-busca__nome">{{ r.nome }}</span>
+            <span class="ticker-busca__preco" *ngIf="r.precoFechamento != null">
+              {{ formatMoeda(r.precoFechamento) }} <small>({{ formatMes(r.anoMes ?? '') }})</small>
+            </span>
+          </li>
+        </ul>
       </div>
 
       <div class="campo campo--wide">
@@ -84,7 +102,7 @@
     <div class="form-acoes">
       <button class="btn-secundario" *ngIf="editandoId" (click)="cancelarEdicao()">Cancelar</button>
       <button class="btn-primario" [disabled]="!formValido || salvando" (click)="salvar()">
-        {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar alterações' : 'Adicionar') }}
+        {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar alterações' : 'Comprar') }}
       </button>
     </div>
   </div>
@@ -102,6 +120,10 @@
     <div class="resumo-bar__item">
       <span class="resumo-bar__label">Ganho</span>
       <span class="resumo-bar__valor" [ngClass]="classeGanho(ganhoTotal)">{{ formatMoeda(ganhoTotal) }}</span>
+    </div>
+    <div class="resumo-bar__item" title="Lucro/prejuízo já apurado em vendas — diferente do Ganho acima, que só olha as posições atuais">
+      <span class="resumo-bar__label">Ganho realizado</span>
+      <span class="resumo-bar__valor" [ngClass]="classeGanho(ganhoRealizado)">{{ formatMoeda(ganhoRealizado) }}</span>
     </div>
 
     <div class="resumo-bar__mes">
@@ -167,11 +189,89 @@
           </td>
           <td class="col-acoes">
             <button class="btn-icone" title="Editar" (click)="editar(inv)">✎</button>
+            <button class="btn-icone btn-icone--vender" *ngIf="inv.ticker" title="Vender" [disabled]="vendendoId === inv.id" (click)="vender(inv)">$</button>
             <button class="btn-icone btn-icone--remover" title="Remover" [disabled]="removendoId === inv.id" (click)="remover(inv)">✕</button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- ── Saúde da carteira ──────────────────────────────────────────────────── -->
+  <div class="saude-card" *ngIf="!carregando && saude">
+    <h2 class="saude-card__titulo">Saúde da carteira</h2>
+    <p class="saude-card__aviso">
+      Qualidade, Risco e Preço médios, ponderados pelo valor de cada posição — complementa o
+      balanceamento por setor com uma leitura do conjunto.
+    </p>
+
+    <div class="estado-loading" *ngIf="carregandoSaude">
+      <div class="spinner-lg"></div>
+      <span>Calculando saúde da carteira...</span>
+    </div>
+
+    <div class="saude-grid" *ngIf="!carregandoSaude">
+      <div class="saude-item">
+        <span class="saude-item__label">Qualidade</span>
+        <span class="score-badge" [ngClass]="scoreClass(saude.scoreQualidadeMedio)">{{ formatScore(saude.scoreQualidadeMedio) }}</span>
+      </div>
+      <div class="saude-item">
+        <span class="saude-item__label">Risco</span>
+        <span class="score-badge" [ngClass]="scoreClass(saude.riscoCompostoMedio)">{{ formatScore(saude.riscoCompostoMedio) }}</span>
+      </div>
+      <div class="saude-item">
+        <span class="saude-item__label">Preço</span>
+        <span class="score-badge" [ngClass]="scoreClass(saude.scorePrecoMedio)">{{ formatScore(saude.scorePrecoMedio) }}</span>
+      </div>
+      <div class="saude-item saude-item--final">
+        <span class="saude-item__label">Final</span>
+        <span class="score-badge" [ngClass]="scoreClass(saude.scoreFinalMedio)">{{ formatScore(saude.scoreFinalMedio) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Balanceamento por setor ────────────────────────────────────────────── -->
+  <div class="balanceamento-card" *ngIf="!carregando && balanceamento.length">
+    <h2 class="balanceamento-card__titulo">Balanceamento por setor</h2>
+    <p class="balanceamento-card__aviso">
+      Compara o que cada setor representa hoje contra o alvo configurado em
+      <a routerLink="/account/settings">Configurações</a>. Mais desbalanceado primeiro.
+    </p>
+
+    <div class="estado-loading" *ngIf="carregandoBalanceamento">
+      <div class="spinner-lg"></div>
+      <span>Calculando balanceamento...</span>
+    </div>
+
+    <div class="balanceamento-table-wrap" *ngIf="!carregandoBalanceamento">
+      <table class="balanceamento-table">
+        <thead>
+          <tr>
+            <th class="col-setor">Setor</th>
+            <th class="col-num">Valor atual</th>
+            <th class="col-num">% atual</th>
+            <th class="col-num">% alvo</th>
+            <th class="col-num">Diferença</th>
+            <th class="col-status">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of balanceamento">
+            <td class="col-setor">
+              {{ b.setor }}
+              <span class="setor-descoberto-badge" *ngIf="b.semNenhumaAcao" title="Nenhuma ação sua nesse setor hoje">sem ação</span>
+            </td>
+            <td class="col-num">{{ formatMoeda(b.valorAtual) }}</td>
+            <td class="col-num">{{ b.percentualAtual.toFixed(1) }}%</td>
+            <td class="col-num">{{ b.percentualAlvo.toFixed(1) }}%</td>
+            <td class="col-num">{{ b.diferenca >= 0 ? '+' : '' }}{{ b.diferenca.toFixed(1) }} pp</td>
+            <td class="col-status">
+              <span class="status-badge" [ngClass]="statusSetorClasse(b.status)">{{ statusSetorLabel(b.status) }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ── Ranking das ações da simulação + recomendações executáveis ─────────── -->
@@ -259,6 +359,59 @@
   <div class="historico-card" *ngIf="historico.length">
     <h2 class="historico-card__titulo">Evolução da simulação</h2>
     <canvas baseChart [data]="chartData" [options]="chartOptions" type="line"></canvas>
+  </div>
+
+  <!-- ── Log de operações ────────────────────────────────────────────────────── -->
+  <div class="transacoes-card">
+    <h2 class="transacoes-card__titulo">Log de operações</h2>
+    <p class="transacoes-card__aviso">
+      Tudo que já foi feito na simulação (compra manual, venda, recomendação executada, aporte
+      semanal, caixa investido) — use como roteiro pra replicar manualmente na sua carteira real.
+    </p>
+
+    <div class="estado-loading" *ngIf="carregandoTransacoes">
+      <div class="spinner-lg"></div>
+      <span>Carregando log de operações...</span>
+    </div>
+
+    <div class="estado-vazio" *ngIf="!carregandoTransacoes && transacoes.length === 0">
+      <div class="estado-vazio__icon">📋</div>
+      <h3>Nenhuma operação registrada ainda</h3>
+      <p>Compre, venda ou execute uma recomendação na simulação pra começar o log.</p>
+    </div>
+
+    <div class="transacoes-table-wrap" *ngIf="!carregandoTransacoes && transacoes.length > 0">
+      <table class="transacoes-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Ticker</th>
+            <th class="col-num">Quantidade</th>
+            <th class="col-num">Preço</th>
+            <th class="col-num">Valor</th>
+            <th>Origem</th>
+            <th>Motivo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of transacoes">
+            <td>{{ t.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <span class="transacao-tipo" [ngClass]="'transacao-tipo--' + t.tipo">
+                {{ t.tipo === 'compra' ? 'Comprou' : 'Vendeu' }}
+              </span>
+            </td>
+            <td><span class="ticker-badge">{{ t.ticker }}</span></td>
+            <td class="col-num">{{ t.quantidade }}</td>
+            <td class="col-num">{{ formatMoeda(t.preco) }}</td>
+            <td class="col-num">{{ formatMoeda(t.valor) }}</td>
+            <td>{{ origemLabel(t.origem) }}</td>
+            <td class="transacoes-table__motivo">{{ t.motivo ?? '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div>

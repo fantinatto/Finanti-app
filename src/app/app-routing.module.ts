@@ -38,6 +38,10 @@ const routes: Routes = [
     loadChildren: () => import('./components/pages/simulacao/simulacao.module').then(m => m.SimulacaoModule)
   },
   {
+    path: 'fiscal',
+    loadChildren: () => import('./components/pages/fiscal/fiscal.module').then(m => m.FiscalModule)
+  },
+  {
     path: 'privacidade',
     loadChildren: () => import('./components/pages/legal/legal.module').then(m => m.LegalModule)
   },
