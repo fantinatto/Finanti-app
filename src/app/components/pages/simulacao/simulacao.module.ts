@@ -5,9 +5,10 @@ import { RouterModule } from '@angular/router';
 import { NgChartsModule } from 'ng2-charts';
 import { SimulacaoComponent } from './simulacao.component';
 import { SimulacaoRoutingModule } from './simulacao-routing.module';
+import { RecommendationPreviewComponent } from './recommendation-preview/recommendation-preview.component';
 
 @NgModule({
-  declarations: [SimulacaoComponent],
+  declarations: [SimulacaoComponent, RecommendationPreviewComponent],
   imports: [CommonModule, FormsModule, RouterModule, NgChartsModule, SimulacaoRoutingModule],
 })
 export class SimulacaoModule {}

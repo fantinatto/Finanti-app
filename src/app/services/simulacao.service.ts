@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { BalanceamentoSetor, GanhoInvestimento, Investimento, RecomendacaoHolding, SaudeCarteira, UpsertInvestimentoPayload } from '../interfaces/portfolio.interfaces';
+import { BalanceamentoSetor, ExecutarNextBestActionResultPreview, GanhoInvestimento, Investimento, RecomendacaoHolding, RecommendationPreviewResult, SaudeCarteira, UpsertInvestimentoPayload } from '../interfaces/portfolio.interfaces';
 import { AplicarAporteResultado, InvestirCaixaResultado, SimulacaoConfig, TransacaoSimulacao, UpsertSimulacaoConfigPayload } from '../interfaces/simulacao.interfaces';
 
 /** Espelha PortfolioService nas rotas /portfolio/simulacao/* — mesma forma de método (nome e
@@ -84,5 +84,24 @@ export class SimulacaoService {
    * manualmente na carteira real. */
   listarTransacoes(): Observable<TransacaoSimulacao[]> {
     return this.http.get<TransacaoSimulacao[]>('/portfolio/simulacao/transacoes');
+  }
+
+  /** Preview do motor novo (Search Engine depth=3 + Decision Trace) — só leitura, deliberadamente
+   * PARALELO a `getRecomendacoesInvestimentos` (motor legado) acima. Rota compartilhada entre
+   * real/simulação via query `carteira`. */
+  getRecommendationPreview(anoMes: string): Observable<RecommendationPreviewResult> {
+    return this.http.get<RecommendationPreviewResult>('/portfolio/recommendation-engine/preview', { params: { anoMes, carteira: 'simulacao' } });
+  }
+
+  /** Executa de verdade a `nextBestAction` do Preview — ver plano "Next Best Action". Pode
+   * responder 409 (`NextBestActionChangedErrorPreview`) se a carteira mudou desde o Preview
+   * confirmado; o componente decide o que fazer com isso (recarregar a preview), nunca re-tenta
+   * sozinho aqui. */
+  executarNextBestAction(anoMes: string, expectedActionFingerprint: string, expectedSnapshotHash: string): Observable<ExecutarNextBestActionResultPreview> {
+    return this.http.post<ExecutarNextBestActionResultPreview>(
+      '/portfolio/simulacao/next-best-action/executar',
+      { expectedActionFingerprint, expectedSnapshotHash },
+      { params: { anoMes, carteira: 'simulacao' } },
+    );
   }
 }

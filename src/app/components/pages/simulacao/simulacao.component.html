@@ -276,6 +276,14 @@
 
   <!-- ── Ranking das ações da simulação + recomendações executáveis ─────────── -->
   <div class="ranking-carteira-card" *ngIf="!carregando && acoesInvestidas.length">
+    <div class="ranking-carteira-card__abas">
+      <button class="aba-btn" [class.aba-btn--ativa]="abaRecomendacoes === 'legado'" (click)="abaRecomendacoes = 'legado'">Recomendações atuais</button>
+      <button class="aba-btn" [class.aba-btn--ativa]="abaRecomendacoes === 'preview'" (click)="abaRecomendacoes = 'preview'">Motor novo — Preview</button>
+    </div>
+
+    <app-recommendation-preview *ngIf="abaRecomendacoes === 'preview'" [anoMes]="anoMesSelecionado" (executado)="onNextBestActionExecutada()"></app-recommendation-preview>
+
+    <ng-container *ngIf="abaRecomendacoes === 'legado'">
     <h2 class="ranking-carteira-card__titulo">Ranking das suas ações</h2>
     <p class="ranking-carteira-card__aviso">
       Clique em "Executar" pra aplicar à risca uma recomendação de venda/troca. Recomendações de aporte
@@ -353,6 +361,7 @@
         </tbody>
       </table>
     </div>
+    </ng-container>
   </div>
 
   <!-- ── Gráfico de evolução ────────────────────────────────────────────────── -->

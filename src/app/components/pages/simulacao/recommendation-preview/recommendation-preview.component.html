@@ -1,0 +1,149 @@
+<div class="preview-card">
+  <p class="preview-card__aviso">
+    Motor novo (Search Engine, profundidade 3) — só análise, nenhuma operação é executada por aqui.
+    Compare com a aba "Recomendações atuais" pra ver as diferenças de filosofia entre os dois motores.
+  </p>
+
+  <button class="btn-preview" [disabled]="carregando || !anoMes" (click)="carregar()">
+    {{ carregando ? 'Calculando...' : (preview ? 'Recalcular' : 'Calcular preview') }}
+  </button>
+
+  <p class="preview-card__erro" *ngIf="erro">{{ erro }}</p>
+
+  <ng-container *ngIf="preview as p">
+    <!-- ── Próxima ação recomendada (Next Best Action) ───────────────────────── -->
+    <section class="preview-secao">
+      <h3>Próxima ação recomendada</h3>
+
+      <p class="preview-secao__vazio" *ngIf="!p.bestPlan.nextBestAction">
+        Nenhuma ação recomendada neste momento.
+        <span *ngIf="p.bestPlan.terminalReason === 'STOP_SELECTED'"> O motor avaliou alternativas reais e concluiu que nenhuma bate ficar como está.</span>
+      </p>
+
+      <ng-container *ngIf="p.bestPlan.nextBestAction as nba">
+        <div class="preview-plano__cabecalho">
+          <strong>{{ labelMove(nba.move) }} {{ tickerMove(nba.move) }}</strong>
+          <span class="preview-plano__valor">{{ formatMoeda(nba.move.amount) }}</span>
+        </div>
+        <div class="preview-plano__detalhe">
+          <span *ngIf="labelSizing(nba.move) as sizing">tamanho: {{ sizing }} · </span>
+          <span *ngIf="nba.saleNotional > 0">gera R$ {{ nba.saleNotional.toFixed(2) }} · </span>
+          <span *ngIf="nba.purchaseNotional > 0">usa R$ {{ nba.purchaseNotional.toFixed(2) }} · </span>
+          <span>caixa após: {{ formatMoeda(nba.capitalAfter.existingCash + nba.capitalAfter.externalContributionBudget + nba.capitalAfter.proceedsGeneratedByPlan) }}</span>
+        </div>
+        <div class="preview-plano__motivo">
+          decidido por <strong>{{ nba.decidedBy }}</strong>
+          <span *ngIf="alternativasAvaliadas(nba).length as n"> — venceu {{ n }} outra(s) alternativa(s) que realmente competiram</span>
+        </div>
+        <div class="preview-plano__cortados" *ngIf="candidatosNaoAvaliados(nba) as cortados">
+          {{ cortados }} candidato(s) não avaliado(s) — fora do orçamento de expansão, nunca chegaram a competir.
+        </div>
+
+        <button class="btn-preview btn-preview--executar" [disabled]="executando" (click)="executar()">
+          {{ executando ? 'Executando...' : 'Executar' }}
+        </button>
+        <p class="preview-card__erro" *ngIf="executarErro">{{ executarErro }}</p>
+        <p class="preview-card__sucesso" *ngIf="executarSucesso">{{ executarSucesso }}</p>
+      </ng-container>
+    </section>
+
+    <!-- ── Projeção da busca (Principal Variation — NUNCA plano já aprovado) ─── -->
+    <section class="preview-secao" *ngIf="p.bestPlan.projectedPath.length">
+      <h3>Projeção da busca</h3>
+      <p class="preview-secao__aviso-projecao">
+        Os próximos passos são uma projeção. Após executar a ação acima, o motor recalculará a
+        carteira e poderá recomendar uma sequência diferente.
+      </p>
+      <ol class="preview-plano preview-plano--projecao">
+        <li *ngFor="let step of p.bestPlan.projectedPath">
+          <div class="preview-plano__cabecalho">
+            <strong>{{ step.sequence }}. {{ labelMove(step.move) }} {{ tickerMove(step.move) }}</strong>
+            <span class="preview-plano__valor">{{ formatMoeda(step.move.amount) }}</span>
+          </div>
+          <div class="preview-plano__detalhe">
+            <span *ngIf="labelSizing(step.move) as sizing">tamanho: {{ sizing }} · </span>
+            <span *ngIf="step.saleNotional > 0">gera R$ {{ step.saleNotional.toFixed(2) }} · </span>
+            <span *ngIf="step.purchaseNotional > 0">usa R$ {{ step.purchaseNotional.toFixed(2) }} · </span>
+            <span>caixa após: {{ formatMoeda(step.capitalAfter.existingCash + step.capitalAfter.externalContributionBudget + step.capitalAfter.proceedsGeneratedByPlan) }}</span>
+          </div>
+          <div class="preview-plano__motivo">
+            decidido por <strong>{{ step.decidedBy }}</strong>
+            <span *ngIf="alternativasAvaliadas(step).length as n"> — venceu {{ n }} outra(s) alternativa(s) que realmente competiram</span>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ── Resultado esperado (antes → depois) ──────────────────────────────── -->
+    <section class="preview-secao">
+      <h3>Resultado esperado</h3>
+      <table class="preview-comparativo">
+        <tbody>
+          <tr>
+            <td>Balanceamento (desvio total)</td>
+            <td>{{ formatPontos(p.initialEvaluation.balance.totalSectorDeviation) }} → {{ formatPontos(p.bestPlan.finalEvaluation.balance.totalSectorDeviation) }}</td>
+          </tr>
+          <tr>
+            <td>Setores fora da banda</td>
+            <td>{{ p.initialEvaluation.balance.sectorsOutsideBand }} → {{ p.bestPlan.finalEvaluation.balance.sectorsOutsideBand }}</td>
+          </tr>
+          <tr>
+            <td>Qualidade Δ</td>
+            <td>{{ formatScore(p.initialEvaluation.health.search.quality.value) }} → {{ formatScore(p.bestPlan.finalEvaluation.health.search.quality.value) }}</td>
+          </tr>
+          <tr>
+            <td>Risco Δ</td>
+            <td>{{ formatScore(p.initialEvaluation.health.search.risk.value) }} → {{ formatScore(p.bestPlan.finalEvaluation.health.search.risk.value) }}</td>
+          </tr>
+          <tr>
+            <td>Preço Δ</td>
+            <td>{{ formatScore(p.initialEvaluation.health.search.price.value) }} → {{ formatScore(p.bestPlan.finalEvaluation.health.search.price.value) }}</td>
+          </tr>
+          <tr>
+            <td>Concentração de segmento (pior)</td>
+            <td>{{ formatPontos(p.initialEvaluation.balance.worstSegmentConcentration) }}% → {{ formatPontos(p.bestPlan.finalEvaluation.balance.worstSegmentConcentration) }}%</td>
+          </tr>
+          <tr>
+            <td>Turnover total</td>
+            <td>{{ formatMoeda(p.bestPlan.turnover) }}</td>
+          </tr>
+          <tr>
+            <td>Capital residual</td>
+            <td>{{ formatMoeda(p.bestPlan.capitalResidual.existingCash + p.bestPlan.capitalResidual.externalContributionBudget + p.bestPlan.capitalResidual.proceedsGeneratedByPlan) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ── Alternativas ──────────────────────────────────────────────────────── -->
+    <section class="preview-secao" *ngIf="p.alternatives.length">
+      <h3>Alternativas (fronteira de Pareto)</h3>
+      <ul class="preview-alternativas">
+        <li *ngFor="let alt of p.alternatives">
+          {{ descreverAlternativa(alt) }}
+          — desvio {{ formatPontos(alt.finalEvaluation.balance.totalSectorDeviation) }}, turnover {{ formatMoeda(alt.turnover) }}
+        </li>
+      </ul>
+    </section>
+
+    <!-- ── Debug / Search Metadata ───────────────────────────────────────────── -->
+    <section class="preview-secao preview-secao--debug">
+      <h3>Debug / Search Metadata</h3>
+      <div class="preview-debug-grid">
+        <span>depth: {{ p.searchMetadata.depthReached }}/{{ p.config.maxDepth }}</span>
+        <span>beamWidth: {{ p.config.beamWidth }}</span>
+        <span>maxMovesPerNode: {{ p.config.maxMovesPerNode }}</span>
+        <span>statesGenerated: {{ p.searchMetadata.statesGenerated }}</span>
+        <span>statesEvaluated: {{ p.searchMetadata.statesEvaluated }}</span>
+        <span>statesPruned: {{ p.searchMetadata.statesPruned }}</span>
+        <span>transpositionHits: {{ p.searchMetadata.transpositionHits }}</span>
+        <span>tempo: {{ p.searchMetadata.durationMs }}ms</span>
+        <span>rebalanceToleranceMode: {{ p.config.rebalanceToleranceMode }}</span>
+        <span>balanceMaterialityThresholdPp: {{ p.config.balanceMaterialityThresholdPp }}</span>
+        <span>engineVersion: {{ p.engineVersion }}</span>
+        <span>rankingVersion: {{ p.config.rankingVersion }}</span>
+        <span>gerado em: {{ p.generatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
+      </div>
+    </section>
+  </ng-container>
+</div>

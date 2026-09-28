@@ -38,6 +38,10 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
   executandoId: string | null = null;
   confirmandoReinicio = false;
 
+  /** Toggle entre a tabela do motor legado (default) e o Preview do Search Engine — ver plano
+   * "Preview do Search Engine". Puramente de exibição, não afeta nenhum dado carregado. */
+  abaRecomendacoes: 'legado' | 'preview' = 'legado';
+
   /** Lucro/prejuízo já apurado em vendas (ver TransacaoSimulacao.ganhoRealizado) — sem isso, o
    * "Ganho" do resumo (não-realizado, baseado só nas posições atuais) não refletia o lucro de
    * uma venda depois que o dinheiro era reinvestido (o novo precoMedio reseta o ganho embutido). */
@@ -193,6 +197,16 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
         this.investindoCaixa = false;
       },
     });
+  }
+
+  /** Motor novo (Next Best Action) executa por dentro de `RecommendationPreviewComponent` — essa
+   * tela só fica sabendo via `(executado)`. Mesma reação de `executarRecomendacao` (o
+   * equivalente do motor legado): recarrega holdings/caixa/ganho realizado/log. */
+  onNextBestActionExecutada(): void {
+    this.carregarInvestimentos();
+    this.carregarConfig();
+    this.carregarGanhoRealizado();
+    this.carregarTransacoes();
   }
 
   categoriaExecutavel(categoria: string): boolean {

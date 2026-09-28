@@ -726,6 +726,12 @@ $danger:   #ef4444;
   padding: 1.25rem 1.5rem;
   margin-top: 1.5rem;
 
+  &__abas {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
   &__titulo {
     font-size: 1rem;
     font-weight: 700;
@@ -934,5 +940,22 @@ $danger:   #ef4444;
 
   canvas {
     max-height: 320px;
+  }
+}
+
+.aba-btn {
+  background: #f3f4f6;
+  color: $muted;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--ativa {
+    background: $primary;
+    color: #fff;
+    border-color: $primary;
   }
 }
