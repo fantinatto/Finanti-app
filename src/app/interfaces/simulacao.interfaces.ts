@@ -26,9 +26,12 @@ export interface TransacaoSimulacao {
   createdAt: string;
 }
 
+/** Aporte semanal agora só credita caixaDisponivel — não compra nada sozinho (correção
+ * 2026-09-30: antes diluía automaticamente entre setores subalocados). */
 export interface AplicarAporteResultado {
   semanasAplicadas: number;
-  transacoes: TransacaoSimulacao[];
+  valorAportado: number;
+  caixaDisponivel?: number;
 }
 
 export interface InvestirCaixaResultado {

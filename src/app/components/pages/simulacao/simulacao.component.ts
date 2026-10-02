@@ -167,12 +167,11 @@ export class SimulacaoComponent extends CarteiraBaseComponent {
         if (res.semanasAplicadas === 0) {
           this.toastr.info('Nenhuma semana completa desde o último aporte', 'Simulação');
         } else {
-          this.toastr.success(`${res.semanasAplicadas} semana(s) de aporte aplicada(s)`, 'Simulação');
+          // Aporte só credita caixa agora — não compra nada sozinho (ver AplicarAporteResultado).
+          this.toastr.success(`${this.formatMoeda(res.valorAportado)} creditado(s) no caixa disponível (${res.semanasAplicadas} semana(s))`, 'Simulação');
         }
         this.aplicandoAporte = false;
-        this.carregarInvestimentos();
         this.carregarConfig();
-        this.carregarTransacoes();
       },
       error: (err) => {
         this.toastr.error(err?.error?.message ?? 'Não foi possível aplicar o aporte semanal', 'Erro');
