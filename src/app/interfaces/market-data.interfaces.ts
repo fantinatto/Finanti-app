@@ -126,3 +126,52 @@ export interface TickerBusca {
   precoFechamento: number | null;
   anoMes: string | null;
 }
+
+/** Coleta de FII — pipeline/tabelas separados de IndicadorBruto (ações). Sem score/ranking
+ * ainda, só os fundamentos brutos do fundo (ver IndicadorMensalFii no schema). */
+export interface IndicadorFiiBruto {
+  id: string;
+  ticker: string;
+  anoMes: string;
+  fii: { nome: string; tipoFundo: string | null; segmento: string | null };
+  precoFechamento: number | null;
+  dy: number | null;
+  pvp: number | null;
+  valorPatrimonialCota: number | null;
+  liquidezMediaDiaria: number | null;
+  percentualCaixa: number | null;
+  dividendCagr: number | null;
+  cotaCagr: number | null;
+  numeroCotistas: number | null;
+  numeroCotas: number | null;
+  patrimonio: number | null;
+  lastDividend: number | null;
+}
+
+export interface ResumoColetaFii {
+  total: number;
+  comDy: number;
+  comPvp: number;
+}
+
+/** Item do ranking de FII — pipeline isolado do ranking de ação (sem setor/segmento/grupo,
+ * só um split interno no pilar Valuation entre Papel e Tijolo/Misto). Ver FiiRankingService. */
+export interface FiiRankingItem {
+  ticker: string;
+  nome: string;
+  tipoFundo: string | null;
+  segmento: string | null;
+  dy: number | null;
+  pvp: number | null;
+  liquidezMediaDiaria: number | null;
+  patrimonio: number | null;
+  scoreValuation: number | null;
+  scoreRenda: number | null;
+  scoreLiquidezPorte: number | null;
+  scorePreservacao: number | null;
+  scoreFinal: number | null;
+  /** 'desenvolvimento' | 'dividend_trap' | 'desenvolvimento+dividend_trap' | null — travas de
+   * risco pós-sigmoide já aplicadas no score (ver FiiRankingService), isso aqui é só pra exibir
+   * o motivo. */
+  alertaRisco: string | null;
+}

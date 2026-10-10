@@ -417,6 +417,14 @@ $danger:   #ef4444;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  td.col-setor {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: $muted;
+  }
 }
 
 .tipo-badge {

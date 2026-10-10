@@ -1,0 +1,162 @@
+<div class="financas-layout">
+  <div class="financas-header">
+    <div>
+      <h1>Finanças</h1>
+      <p>Controle de ganhos e gastos mensais — revise os itens replicados do mês anterior.</p>
+    </div>
+    <div class="mes-nav">
+      <button type="button" class="btn-mes" (click)="mudarMes(-1)" aria-label="Mês anterior">‹</button>
+      <span class="mes-nav__label">{{ formatMesLabel(anoMesSelecionado) }}</span>
+      <button type="button" class="btn-mes" (click)="mudarMes(1)" aria-label="Próximo mês">›</button>
+    </div>
+  </div>
+
+  <div class="loading-box" *ngIf="carregando">Carregando...</div>
+
+  <ng-container *ngIf="!carregando && mes">
+    <div class="aviso-replicado" *ngIf="mes.replicadoDe">
+      Itens replicados de {{ formatMesLabel(mes.replicadoDe) }} — revise os valores e marque o
+      que já foi pago/recebido.
+    </div>
+
+    <div class="resumo-card">
+      <div class="resumo-item">
+        <span class="resumo-item__label">Ganhos</span>
+        <span class="resumo-item__valor resumo-item__valor--ganho">{{ formatMoeda(mes.totalGanhos) }}</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-item__label">Gastos</span>
+        <span class="resumo-item__valor resumo-item__valor--gasto">{{ formatMoeda(mes.totalGastos) }}</span>
+      </div>
+      <div class="resumo-item">
+        <span class="resumo-item__label">Saldo</span>
+        <span class="resumo-item__valor" [class.resumo-item__valor--ganho]="mes.saldo >= 0" [class.resumo-item__valor--gasto]="mes.saldo < 0">
+          {{ formatMoeda(mes.saldo) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Ganhos -->
+    <section class="bloco-card">
+      <h2 class="bloco-card__titulo">Ganhos</h2>
+
+      <form class="form-grid form-grid--ganho" (ngSubmit)="salvarGanho()">
+        <div class="campo campo--wide">
+          <label>Nome</label>
+          <input type="text" [(ngModel)]="formGanho.nome" name="nomeGanho" placeholder="Ex: Salário" required />
+        </div>
+        <div class="campo">
+          <label>Valor</label>
+          <input type="number" step="0.01" min="0" [(ngModel)]="formGanho.valor" name="valorGanho" required />
+        </div>
+        <div class="campo campo--checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="formGanho.recebido" name="recebidoGanho" />
+            Recebido
+          </label>
+        </div>
+        <div class="form-acoes">
+          <button type="submit" class="btn-primario">{{ editandoGanhoId ? 'Salvar' : 'Adicionar' }}</button>
+          <button type="button" class="btn-secundario" *ngIf="editandoGanhoId" (click)="cancelarEdicaoGanho()">Cancelar</button>
+        </div>
+      </form>
+
+      <div class="tabela-wrap" *ngIf="mes.ganhos.length">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th class="col-num">Valor</th>
+              <th class="col-num">Recebido</th>
+              <th class="col-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let g of mes.ganhos">
+              <td>{{ g.nome }}</td>
+              <td class="col-num">{{ formatMoeda(g.valor) }}</td>
+              <td class="col-num">
+                <input type="checkbox" [checked]="g.recebido" (change)="toggleRecebido(g)" />
+              </td>
+              <td class="col-acoes">
+                <button type="button" class="btn-link" (click)="iniciarEdicaoGanho(g)">Editar</button>
+                <button type="button" class="btn-link btn-link--danger" (click)="removerGanho(g.id)">Excluir</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tabela-vazia" *ngIf="!mes.ganhos.length">Nenhum ganho cadastrado neste mês.</p>
+    </section>
+
+    <!-- Gastos -->
+    <section class="bloco-card">
+      <h2 class="bloco-card__titulo">Gastos</h2>
+
+      <form class="form-grid form-grid--gasto" (ngSubmit)="salvarGasto()">
+        <div class="campo campo--wide">
+          <label>Nome</label>
+          <input type="text" [(ngModel)]="formGasto.nome" name="nomeGasto" placeholder="Ex: Conta de Luz" required />
+        </div>
+        <div class="campo">
+          <label>Forma de Pagamento</label>
+          <select [(ngModel)]="formGasto.formaPagamento" name="formaPagamento">
+            <option value="">—</option>
+            <option *ngFor="let f of formasPagamento" [value]="f">{{ f }}</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Valor</label>
+          <input type="number" step="0.01" min="0" [(ngModel)]="formGasto.valor" name="valorGasto" required />
+        </div>
+        <div class="campo">
+          <label>Vencimento</label>
+          <input type="date" [(ngModel)]="formGasto.dataVencimento" name="dataVencimento" />
+        </div>
+        <div class="campo campo--checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="formGasto.pago" name="pagoGasto" />
+            Pago
+          </label>
+        </div>
+        <div class="form-acoes">
+          <button type="submit" class="btn-primario">{{ editandoGastoId ? 'Salvar' : 'Adicionar' }}</button>
+          <button type="button" class="btn-secundario" *ngIf="editandoGastoId" (click)="cancelarEdicaoGasto()">Cancelar</button>
+        </div>
+      </form>
+
+      <div class="tabela-wrap" *ngIf="mes.gastos.length">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Forma de Pagamento</th>
+              <th class="col-num">Valor</th>
+              <th class="col-num">%</th>
+              <th class="col-num">Vencimento</th>
+              <th class="col-num">Pago</th>
+              <th class="col-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let g of mes.gastos">
+              <td>{{ g.nome }}</td>
+              <td>{{ g.formaPagamento ?? '—' }}</td>
+              <td class="col-num">{{ formatMoeda(g.valor) }}</td>
+              <td class="col-num">{{ percentualGasto(g) }}</td>
+              <td class="col-num">{{ formatData(g.dataVencimento) }}</td>
+              <td class="col-num">
+                <input type="checkbox" [checked]="g.pago" (change)="togglePago(g)" />
+              </td>
+              <td class="col-acoes">
+                <button type="button" class="btn-link" (click)="iniciarEdicaoGasto(g)">Editar</button>
+                <button type="button" class="btn-link btn-link--danger" (click)="removerGasto(g.id)">Excluir</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tabela-vazia" *ngIf="!mes.gastos.length">Nenhum gasto cadastrado neste mês.</p>
+    </section>
+  </ng-container>
+</div>

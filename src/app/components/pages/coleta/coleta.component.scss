@@ -42,6 +42,31 @@ $muted:   #6b7280;
   align-self: flex-start;
 }
 
+// ── Abas (Ações / FIIs) — pipelines separados, ver coleta.component.ts ────────────
+
+.coleta-abas {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.coleta-aba-btn {
+  background: #f3f4f6;
+  color: $muted;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--ativa {
+    background: $primary;
+    color: #fff;
+    border-color: $primary;
+  }
+}
+
 // ── Layout: sidebar + conteúdo ──────────────────────────────────────────────────
 
 .coleta-body {

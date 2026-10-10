@@ -34,6 +34,10 @@ const routes: Routes = [
     loadChildren: () => import('./components/pages/investimentos/investimentos.module').then(m => m.InvestimentosModule)
   },
   {
+    path: 'financas',
+    loadChildren: () => import('./components/pages/financas/financas.module').then(m => m.FinancasModule)
+  },
+  {
     path: 'simulacao',
     loadChildren: () => import('./components/pages/simulacao/simulacao.module').then(m => m.SimulacaoModule)
   },

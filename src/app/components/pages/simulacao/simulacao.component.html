@@ -53,7 +53,7 @@
     <div class="form-grid">
       <div class="campo">
         <label>Tipo</label>
-        <select [(ngModel)]="form.tipo">
+        <select [(ngModel)]="form.tipo" (ngModelChange)="onTipoChange()">
           <option value="acao">Ação</option>
           <option value="fii">FII</option>
           <option value="renda_fixa">Renda Fixa</option>
@@ -77,7 +77,7 @@
             <span class="ticker-busca__ticker">{{ r.ticker }}</span>
             <span class="ticker-busca__nome">{{ r.nome }}</span>
             <span class="ticker-busca__preco" *ngIf="r.precoFechamento != null">
-              {{ formatMoeda(r.precoFechamento) }} <small>({{ formatMes(r.anoMes ?? '') }})</small>
+              {{ formatMoeda(r.precoFechamento) }} <small *ngIf="r.anoMes">({{ formatMes(r.anoMes) }})</small>
             </span>
           </li>
         </ul>
@@ -156,6 +156,7 @@
           <th class="col-tipo">Tipo</th>
           <th class="col-ticker">Ticker</th>
           <th class="col-nome">Nome</th>
+          <th class="col-setor">Setor/Segmento</th>
           <th class="col-num">Preço médio</th>
           <th class="col-num">Quantidade</th>
           <th class="col-num">Cotação ({{ formatMes(anoMesSelecionado) }})</th>
@@ -172,6 +173,7 @@
             <span class="sem-ticker" *ngIf="!inv.ticker">—</span>
           </td>
           <td class="col-nome">{{ inv.nome }}</td>
+          <td class="col-setor">{{ ganhoDe(inv.id)?.classificacao ?? '—' }}</td>
           <td class="col-num">{{ formatMoeda(inv.precoMedio) }}</td>
           <td class="col-num">{{ inv.quantidade }}</td>
           <td class="col-num" [attr.colspan]="naoNegociavel(inv) ? 3 : null">

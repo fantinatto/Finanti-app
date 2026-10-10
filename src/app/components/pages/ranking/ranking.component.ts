@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { MarketDataService } from '../../../services/market-data.service';
-import { RankingItem } from '../../../interfaces/market-data.interfaces';
+import { FiiRankingItem, RankingItem } from '../../../interfaces/market-data.interfaces';
 
 type TipoGrupo = 'setor' | 'segmento' | 'geral' | 'hibrido';
 type OrdenacaoCampo =
@@ -50,6 +50,15 @@ export class RankingComponent implements OnInit {
   readonly TODOS_GRUPOS = TODOS_GRUPOS;
   readonly camposScore = CAMPOS_SCORE;
 
+  /** Aba FII — pipeline 100% separado (sem setor/segmento/híbrido/Δ, ver FiiRankingService).
+   * Estado próprio, nenhuma chamada compartilhada com a aba de ações. */
+  abaRanking: 'acoes' | 'fii' = 'acoes';
+  mesesFii: string[] = [];
+  anoMesSelecionadoFii = '';
+  itensFii: FiiRankingItem[] = [];
+  carregandoMesesFii = false;
+  carregandoRankingFii = false;
+
   tipoGrupo: TipoGrupo = 'setor';
   meses: string[] = [];
   grupos: string[] = [];
@@ -86,6 +95,63 @@ export class RankingComponent implements OnInit {
 
   ngOnInit(): void {
     this.carregarMeses();
+    this.carregarMesesFii();
+  }
+
+  carregarMesesFii(): void {
+    this.carregandoMesesFii = true;
+    this.marketData.getMesesFii().subscribe({
+      next: (meses) => {
+        this.mesesFii = meses;
+        if (meses.length) {
+          this.anoMesSelecionadoFii = meses[0];
+          this.carregarRankingFii();
+        }
+        this.carregandoMesesFii = false;
+      },
+      error: () => { this.carregandoMesesFii = false; },
+    });
+  }
+
+  carregarRankingFii(): void {
+    if (!this.anoMesSelecionadoFii) return;
+    this.carregandoRankingFii = true;
+    this.marketData.getRankingFii(this.anoMesSelecionadoFii).subscribe({
+      next: (itens) => {
+        this.itensFii = itens;
+        this.carregandoRankingFii = false;
+      },
+      error: () => { this.carregandoRankingFii = false; },
+    });
+  }
+
+  onMesChangeFii(): void {
+    this.carregarRankingFii();
+  }
+
+  formatMoedaFii(v: number | null): string {
+    if (v === null) return '—';
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  }
+
+  formatPercentualFii(v: number | null): string {
+    return v !== null ? `${v.toFixed(2)}%` : '—';
+  }
+
+  /** Tabela de FII ganhou muitas colunas (tipo, segmento, 4 scores) — corta o nome em 10
+   * caracteres pra não estourar a largura; nome completo continua no title="" do <td>. */
+  truncarNomeFii(nome: string): string {
+    const MAX = 10;
+    return nome.length > MAX ? `${nome.slice(0, MAX)}…` : nome;
+  }
+
+  /** Texto do tooltip do ⚠ — alertaRisco já vem calculado do backend (ver FiiRankingService),
+   * isso só traduz o código pra texto legível. */
+  descricaoAlertaRisco(alertaRisco: string | null): string {
+    const partes: string[] = [];
+    if (alertaRisco?.includes('desenvolvimento')) partes.push('Fundo de Desenvolvimento (risco de obra/orçamento) — Preservação penalizada em 15%');
+    if (alertaRisco?.includes('dividend_trap')) partes.push('Dividend Trap (DY alto com cota caindo) — Renda penalizada em 10%');
+    return partes.join(' | ');
   }
 
   carregarMeses(): void {

@@ -1,13 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { MarketDataService } from '../../../services/market-data.service';
-import { FiltroAvancadoMeta, FiltroFixoMeta, IndicadorBruto, IngestionFiltro, ResumoColeta } from '../../../interfaces/market-data.interfaces';
+import { FiltroAvancadoMeta, FiltroFixoMeta, IndicadorBruto, IndicadorFiiBruto, IngestionFiltro, ResumoColeta, ResumoColetaFii } from '../../../interfaces/market-data.interfaces';
 
 interface ColunaIndicador {
   campo: keyof IndicadorBruto;
   label: string;
   descricao: string;
   fonte: 'brapi' | 'bolsai' | 'calculado';
+}
+
+interface ColunaIndicadorFii {
+  campo: keyof IndicadorFiiBruto;
+  label: string;
+  descricao: string;
 }
 
 const LABEL_GRUPO_FILTRO: Record<FiltroAvancadoMeta['grupo'], string> = {
@@ -47,6 +53,11 @@ const FILTROS_PADRAO_SEGURANCA: Record<string, RangeInput> = {
   styleUrls: ['./coleta.component.scss'],
 })
 export class ColetaComponent implements OnInit {
+  /** Segrega Coleta de ações e de FII — pipelines/endpoints/tabelas 100% separados no backend
+   * (ver IngestionFiiService), então aqui também fica tudo em estado próprio, nada compartilhado
+   * com o fluxo de ações além do layout. */
+  abaColeta: 'acoes' | 'fii' = 'acoes';
+
   meses: string[] = [];
   anoMesSelecionado = '';
 
@@ -56,6 +67,13 @@ export class ColetaComponent implements OnInit {
   ingerindo = false;
   carregando = false;
   sidebarAberta = false;
+
+  mesesFii: string[] = [];
+  anoMesSelecionadoFii = '';
+  resumoFii: ResumoColetaFii | null = null;
+  indicadoresFii: IndicadorFiiBruto[] = [];
+  ingerindoFii = false;
+  carregandoFii = false;
 
   filtroIngestion: IngestionFiltro = {
     soAcoes: false,
@@ -87,6 +105,19 @@ export class ColetaComponent implements OnInit {
     { campo: 'dividaLiquidaEbitda',     label: 'DL/EBITDA',     descricao: 'Dívida Líquida / EBITDA',          fonte: 'bolsai' },
     { campo: 'cagrReceita5a',           label: 'CAGR Rec 5a',   descricao: 'CAGR Receita 5 anos (%)',          fonte: 'bolsai' },
     { campo: 'cagrLucro5a',             label: 'CAGR Luc 5a',   descricao: 'CAGR Lucro 5 anos (%)',            fonte: 'bolsai' },
+  ];
+
+  readonly colunasFii: ColunaIndicadorFii[] = [
+    { campo: 'dy',                   label: 'DY',            descricao: 'Dividend Yield (%, 12 meses)' },
+    { campo: 'pvp',                  label: 'P/VP',          descricao: 'Preço / Valor Patrimonial da cota' },
+    { campo: 'valorPatrimonialCota', label: 'VP/Cota',       descricao: 'Valor patrimonial por cota' },
+    { campo: 'liquidezMediaDiaria',  label: 'Liquidez/dia',  descricao: 'Liquidez média diária (R$)' },
+    { campo: 'percentualCaixa',      label: '% Caixa',       descricao: 'Percentual do patrimônio em caixa' },
+    { campo: 'dividendCagr',         label: 'CAGR Div.',     descricao: 'Crescimento anualizado do dividendo' },
+    { campo: 'cotaCagr',             label: 'CAGR Cota',     descricao: 'Crescimento anualizado do valor da cota' },
+    { campo: 'numeroCotistas',       label: 'Cotistas',      descricao: 'Número de cotistas' },
+    { campo: 'patrimonio',           label: 'Patrimônio',    descricao: 'Patrimônio líquido do fundo (R$)' },
+    { campo: 'lastDividend',         label: 'Últ. Dividendo', descricao: 'Último dividendo pago por cota' },
   ];
 
   constructor(
@@ -124,6 +155,74 @@ export class ColetaComponent implements OnInit {
     this.marketData.getFiltrosFixos().subscribe({
       next: (fixos) => { this.filtrosFixos = fixos; },
     });
+
+    this.marketData.getMesesFii().subscribe({
+      next: (meses) => {
+        this.mesesFii = meses;
+        if (meses.length) {
+          this.anoMesSelecionadoFii = meses[0];
+          this.carregarDadosFii();
+        }
+      },
+    });
+  }
+
+  carregarDadosFii(): void {
+    if (!this.anoMesSelecionadoFii) return;
+    this.carregandoFii = true;
+
+    this.marketData.getResumoFii(this.anoMesSelecionadoFii).subscribe({
+      next: (r) => { this.resumoFii = r; },
+    });
+
+    this.marketData.getIndicadoresFii(this.anoMesSelecionadoFii).subscribe({
+      next: (dados) => {
+        this.indicadoresFii = dados;
+        this.carregandoFii = false;
+      },
+      error: () => { this.carregandoFii = false; },
+    });
+  }
+
+  dispararIngestionFii(): void {
+    if (this.ingerindoFii) return;
+    this.ingerindoFii = true;
+    this.marketData.dispararIngestionFii().subscribe({
+      next: (res) => {
+        this.toastr.success(`${res.processadas} FIIs processados`, 'Coleta concluída');
+        this.ingerindoFii = false;
+        this.marketData.getMesesFii().subscribe((meses) => {
+          this.mesesFii = meses;
+          if (meses.length) {
+            this.anoMesSelecionadoFii = meses[0];
+            this.carregarDadosFii();
+          }
+        });
+      },
+      error: () => {
+        this.toastr.error('Falha na coleta de FIIs', 'Erro');
+        this.ingerindoFii = false;
+      },
+    });
+  }
+
+  getValorFii(item: IndicadorFiiBruto, campo: keyof IndicadorFiiBruto): number | null {
+    const v = item[campo];
+    return typeof v === 'number' ? v : null;
+  }
+
+  formatValorFii(v: number | null, campo: string): string {
+    if (v === null) return '—';
+    if (['dy', 'percentualCaixa', 'dividendCagr', 'cotaCagr'].includes(campo)) {
+      return v.toFixed(2) + '%';
+    }
+    if (['patrimonio', 'liquidezMediaDiaria'].includes(campo)) {
+      return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    }
+    if (['numeroCotistas', 'numeroCotas'].includes(campo)) {
+      return v.toLocaleString('pt-BR');
+    }
+    return v.toFixed(2);
   }
 
   /**

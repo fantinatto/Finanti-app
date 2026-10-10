@@ -4,14 +4,21 @@
   <div class="coleta-header">
     <div class="coleta-title-group">
       <h1>Coleta de Dados B3</h1>
-      <p>Indicadores fundamentalistas por ação, obtidos via brapi.dev e armazenados por competência.</p>
+      <p *ngIf="abaColeta === 'acoes'">Indicadores fundamentalistas por ação, obtidos via brapi.dev e armazenados por competência.</p>
+      <p *ngIf="abaColeta === 'fii'">Indicadores de FII (Status Invest) — catálogo e fundamentos brutos, sem ranking/score ainda.</p>
     </div>
-    <button class="btn-sidebar-toggle" (click)="sidebarAberta = !sidebarAberta" [attr.aria-expanded]="sidebarAberta">
+    <button class="btn-sidebar-toggle" *ngIf="abaColeta === 'acoes'" (click)="sidebarAberta = !sidebarAberta" [attr.aria-expanded]="sidebarAberta">
       <span>{{ sidebarAberta ? 'Fechar' : 'Coleta e filtros' }}</span>
     </button>
   </div>
 
-  <div class="coleta-body">
+  <!-- ── Abas: pipelines de coleta completamente separados (ver IngestionFiiService) ──── -->
+  <div class="coleta-abas">
+    <button class="coleta-aba-btn" [class.coleta-aba-btn--ativa]="abaColeta === 'acoes'" (click)="abaColeta = 'acoes'">Ações</button>
+    <button class="coleta-aba-btn" [class.coleta-aba-btn--ativa]="abaColeta === 'fii'" (click)="abaColeta = 'fii'">FIIs</button>
+  </div>
+
+  <div class="coleta-body" *ngIf="abaColeta === 'acoes'">
 
     <!-- ── Sidebar: competência, coleta e filtros ─────────────────────────────── -->
     <aside class="coleta-sidebar" [class.open]="sidebarAberta">
@@ -182,6 +189,95 @@
 
     </div>
 
+  </div>
+
+  <!-- ── Aba FII — layout simplificado (sem filtros avançados/score, ver análise de complexidade) ── -->
+  <div class="coleta-body" *ngIf="abaColeta === 'fii'">
+    <aside class="coleta-sidebar coleta-sidebar--fii open">
+      <div class="sidebar-section">
+        <label class="sidebar-label" for="selectMesFii">Competência</label>
+        <select id="selectMesFii" [(ngModel)]="anoMesSelecionadoFii" (ngModelChange)="carregarDadosFii()" class="select-mes">
+          <option *ngIf="!mesesFii.length" value="">Sem dados</option>
+          <option *ngFor="let m of mesesFii" [value]="m">{{ formatMes(m) }}</option>
+        </select>
+      </div>
+
+      <button class="btn-coletar" (click)="dispararIngestionFii()" [disabled]="ingerindoFii || carregandoFii">
+        <span *ngIf="ingerindoFii" class="spinner"></span>
+        {{ ingerindoFii ? 'Coletando...' : '↓ Iniciar Coleta de FIIs' }}
+      </button>
+
+      <p class="filtros-fixos-aviso">
+        Sem filtro de screening — traz o universo inteiro de FII com cotação ativa na Status Invest.
+      </p>
+    </aside>
+
+    <div class="coleta-main">
+      <div class="resumo-grid" *ngIf="resumoFii">
+        <div class="resumo-card">
+          <span class="resumo-valor">{{ resumoFii.total }}</span>
+          <span class="resumo-label">FIIs coletados</span>
+        </div>
+        <div class="resumo-card">
+          <span class="resumo-valor">{{ resumoFii.comDy }}</span>
+          <span class="resumo-label">Com DY</span>
+        </div>
+        <div class="resumo-card">
+          <span class="resumo-valor">{{ resumoFii.comPvp }}</span>
+          <span class="resumo-label">Com P/VP</span>
+        </div>
+      </div>
+
+      <div class="estado-loading" *ngIf="carregandoFii">
+        <div class="spinner-lg"></div>
+        <span>Carregando indicadores...</span>
+      </div>
+
+      <div class="estado-vazio" *ngIf="!carregandoFii && !indicadoresFii.length && anoMesSelecionadoFii">
+        <div class="estado-vazio__icon">📡</div>
+        <h3>Nenhuma coleta de FII realizada</h3>
+        <p>Clique em <strong>"Iniciar Coleta de FIIs"</strong> para buscar os dados na Status Invest.</p>
+      </div>
+
+      <div class="estado-vazio" *ngIf="!carregandoFii && !anoMesSelecionadoFii && !ingerindoFii">
+        <div class="estado-vazio__icon">📡</div>
+        <h3>Aguardando primeira coleta de FIIs</h3>
+        <p>Clique em <strong>"Iniciar Coleta de FIIs"</strong> para começar.</p>
+      </div>
+
+      <div class="tabela-wrap" *ngIf="!carregandoFii && indicadoresFii.length">
+        <div class="tabela-toolbar">
+          <span class="tabela-count">{{ indicadoresFii.length }} FIIs</span>
+        </div>
+
+        <div class="tabela-scroll">
+          <table class="ind-table">
+            <thead>
+              <tr>
+                <th class="col-fixed col-ticker">Ticker</th>
+                <th class="col-fixed col-nome">Nome</th>
+                <th class="col-fixed col-setor">Tipo</th>
+                <th class="col-fixed col-setor">Segmento</th>
+                <th *ngFor="let col of colunasFii" class="col-ind" [title]="col.descricao">{{ col.label }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of indicadoresFii">
+                <td class="col-fixed col-ticker"><span class="ticker-badge">{{ item.ticker }}</span></td>
+                <td class="col-fixed col-nome" [title]="item.fii.nome">{{ item.fii.nome }}</td>
+                <td class="col-fixed col-setor">{{ item.fii.tipoFundo ?? '—' }}</td>
+                <td class="col-fixed col-setor">{{ item.fii.segmento ?? '—' }}</td>
+                <td *ngFor="let col of colunasFii" class="col-ind">
+                  <span [class]="classeValor(getValorFii(item, col.campo))">
+                    {{ formatValorFii(getValorFii(item, col.campo), col.campo) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>

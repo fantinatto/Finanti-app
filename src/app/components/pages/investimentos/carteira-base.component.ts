@@ -79,6 +79,14 @@ interface FormInvestimento {
   registrarFiscal: boolean;
   dataOperacao: string;
   custosFiscais: number | null;
+  /** Campos abaixo só existem no template de /investimentos (não em /simulacao, que nunca os
+   * exibe) — ver comentário de salvar(). tipoRentabilidadeRF/dataVencimentoRF vazios é o sinal
+   * de "não enviar rendaFixa no payload", preservando o comportamento antigo pra Simulação. */
+  tipoRentabilidadeRF: 'cdi' | 'prefixado';
+  percentualOuTaxaRF: number | null;
+  dataAplicacaoRF: string;
+  dataVencimentoRF: string;
+  isentoIrRF: boolean;
 }
 
 /** Função (não const) pra `dataOperacao` sempre nascer com o dia de hoje, nunca a data em que o
@@ -93,6 +101,11 @@ function formVazio(): FormInvestimento {
     registrarFiscal: true,
     dataOperacao: new Date().toISOString().slice(0, 10),
     custosFiscais: null,
+    tipoRentabilidadeRF: 'cdi',
+    percentualOuTaxaRF: null,
+    dataAplicacaoRF: new Date().toISOString().slice(0, 10),
+    dataVencimentoRF: '',
+    isentoIrRF: false,
   };
 }
 
@@ -126,11 +139,16 @@ export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
   form: FormInvestimento = formVazio();
   editandoId: string | null = null;
 
-  /** Search-help do campo Ticker (autocomplete) — só cobre tipo 'acao' (única fonte com
-   * fundamentos ingeridos, ver Acao/IndicadorMensal). Debounce evita 1 request por tecla. */
+  /** Search-help do campo Ticker (autocomplete). resultadosBuscaTicker/buscandoTicker são
+   * estado de EXIBIÇÃO compartilhado (só um tipo fica ativo no form por vez), mas a BUSCA em si
+   * é dividida em dois pipelines totalmente separados (fonte de dado e endpoint diferentes) pra
+   * um bug/latência no caminho de FII nunca afetar o de ações: buscaTicker$ → Acao/IndicadorMensal
+   * (ver ranking-query.service.ts); buscaTickerFii$ → catálogo brapi (ver BrapiService.buscarTickersFii).
+   * Debounce evita 1 request por tecla em ambos. */
   resultadosBuscaTicker: TickerBusca[] = [];
   buscandoTicker = false;
   private buscaTicker$ = new Subject<string>();
+  private buscaTickerFii$ = new Subject<string>();
 
   carregando = false;
   carregandoGanhos = false;
@@ -174,10 +192,25 @@ export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
         },
         error: () => { this.buscandoTicker = false; },
       });
+
+    this.buscaTickerFii$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((termo) => (termo.trim().length >= 2 ? this.marketData.buscarTickersFii(termo) : of([]))),
+      )
+      .subscribe({
+        next: (resultados) => {
+          this.resultadosBuscaTicker = resultados;
+          this.buscandoTicker = false;
+        },
+        error: () => { this.buscandoTicker = false; },
+      });
   }
 
   ngOnDestroy(): void {
     this.buscaTicker$.complete();
+    this.buscaTickerFii$.complete();
   }
 
   carregarInvestimentos(): void {
@@ -330,12 +363,20 @@ export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
     );
   }
 
-  /** Disparado no (input) do campo Ticker — dispara a busca via Subject debounced. */
+  /** Disparado no (input) do campo Ticker — roteia pro Subject debounced certo (ver comentário
+   * de buscaTicker$/buscaTickerFii$). Renda fixa não tem campo ticker (precisaTicker=false). */
   onTickerInput(valor: string): void {
     this.form.ticker = valor;
-    if (this.form.tipo !== 'acao') return; // só ações têm fundamentos ingeridos (ver Acao)
+    if (this.form.tipo !== 'acao' && this.form.tipo !== 'fii') return;
     this.buscandoTicker = valor.trim().length >= 2;
-    this.buscaTicker$.next(valor);
+    (this.form.tipo === 'acao' ? this.buscaTicker$ : this.buscaTickerFii$).next(valor);
+  }
+
+  /** Troca de tipo no form — limpa resultado de busca da seleção anterior pra não mostrar
+   * sugestão de ação (ou FII) obsoleta quando o usuário alterna o tipo sem reapagar o ticker. */
+  onTipoChange(): void {
+    this.resultadosBuscaTicker = [];
+    this.buscandoTicker = false;
   }
 
   /** Preenche nome e preço sugerido a partir do resultado escolhido — preço fica editável em
@@ -359,6 +400,7 @@ export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
     // Edição nunca espelha no Fiscal (ver comentário do campo no DTO) — é uma correção da
     // posição, não necessariamente uma operação nova. registrarFiscal/dataOperacao/custosFiscais
     // ficam nos valores padrão, sem efeito (o backend só lê esses campos em criarInvestimento).
+    const rf = inv.rendaFixaDetalhe;
     this.form = {
       tipo: inv.tipo,
       ticker: inv.ticker ?? '',
@@ -368,6 +410,11 @@ export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
       registrarFiscal: false,
       dataOperacao: new Date().toISOString().slice(0, 10),
       custosFiscais: null,
+      tipoRentabilidadeRF: rf?.tipoRentabilidade ?? 'cdi',
+      percentualOuTaxaRF: rf?.percentualOuTaxa ?? null,
+      dataAplicacaoRF: rf ? rf.dataAplicacao.slice(0, 10) : new Date().toISOString().slice(0, 10),
+      dataVencimentoRF: rf ? rf.dataVencimento.slice(0, 10) : '',
+      isentoIrRF: rf?.isentoIr ?? false,
     };
     this.resultadosBuscaTicker = [];
   }
@@ -396,6 +443,19 @@ export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
       payload.registrarFiscal = this.form.registrarFiscal;
       payload.dataOperacao = this.form.dataOperacao;
       payload.custosFiscais = this.form.custosFiscais ?? 0;
+    }
+
+    // dataVencimentoRF só é preenchido pelo template de /investimentos (que mostra os campos de
+    // renda fixa) — o de /simulacao nunca os exibe, então o guard por si garante zero mudança de
+    // comportamento ali, sem precisar de uma flag "sou investimentos" explícita.
+    if (this.form.tipo === 'renda_fixa' && this.form.dataVencimentoRF) {
+      payload.rendaFixa = {
+        tipoRentabilidade: this.form.tipoRentabilidadeRF,
+        percentualOuTaxa: this.form.percentualOuTaxaRF as number,
+        dataAplicacao: this.form.dataAplicacaoRF,
+        dataVencimento: this.form.dataVencimentoRF,
+        isentoIr: this.form.isentoIrRF,
+      };
     }
 
     const eraEdicao = this.editandoId !== null;

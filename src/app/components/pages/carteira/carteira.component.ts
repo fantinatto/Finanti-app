@@ -12,18 +12,10 @@ const OPCOES_RANKING_RECOMENDACAO: { valor: TipoRankingRecomendacao; label: stri
   { valor: 'hibrido', label: 'Híbrido', descricao: 'Combina Setor (60%) + Segmento (30%) + Geral (10%) numa nota só.' },
 ];
 
-/// Lista provisória — ainda não existe ingestão de fundamentos de FIIs no Finanti,
-/// então não há uma fonte real de segmentos como existe hoje pra ações.
-const SEGMENTOS_FII_PROVISORIOS = [
-  'Lajes Corporativas',
-  'Shoppings',
-  'Logística',
-  'Papel (CRI)',
-  'Híbrido',
-  'Fundo de Fundos',
-  'Residencial',
-  'Outros',
-];
+/// "Setor" de FII = tipo de fundo — taxonomia real e estável da Status Invest (ver
+/// IngestionFiiService), diferente do segmento acima (ainda provisório): só 3 valores válidos
+/// confirmados contra dados reais em 2026-10-08, não precisa de busca dinâmica.
+const TIPOS_FUNDO_FII = ['Fundo de Tijolo', 'Fundo de Papel', 'Fundo Misto'];
 
 const BASES_PADRAO = [80, 100, 110, 120] as const;
 
@@ -34,7 +26,13 @@ const BASES_PADRAO = [80, 100, 110, 120] as const;
 })
 export class CarteiraComponent implements OnInit {
   readonly basesPadrao = BASES_PADRAO;
-  readonly segmentosFiiProvisorios = SEGMENTOS_FII_PROVISORIOS;
+  readonly tiposFundoFii = TIPOS_FUNDO_FII;
+
+  /** Catálogo real de segmentos (Fii.segmento, ver IngestionFiiService.getSegmentos) — era lista
+   * provisória hardcoded até 2026-10-08, trocada depois de confirmar que os nomes não batiam com
+   * os reais (ex: "Logística" vs o real "Imóveis Industriais e Logísticos"), fazendo o
+   * balanceamento mostrar alvo 100% subalocado mesmo com posição real no segmento. */
+  segmentosFii: string[] = [];
   readonly opcoesRankingRecomendacao = OPCOES_RANKING_RECOMENDACAO;
 
   carregando = false;
@@ -61,7 +59,8 @@ export class CarteiraComponent implements OnInit {
   erroSugestao = '';
 
   alocacoesSetor: AlocacaoItem[] = [];
-  alocacoesSegmentoFii: AlocacaoItem[] = SEGMENTOS_FII_PROVISORIOS.map((nome) => ({ nome, percentual: 0 }));
+  alocacoesSegmentoFii: AlocacaoItem[] = [];
+  alocacoesSetorFii: AlocacaoItem[] = TIPOS_FUNDO_FII.map((nome) => ({ nome, percentual: 0 }));
 
   constructor(
     private portfolioService: PortfolioService,
@@ -80,8 +79,9 @@ export class CarteiraComponent implements OnInit {
       perfil: this.userService.getProfile(),
       config: this.portfolioService.getConfig(),
       meses: this.marketData.getMeses(),
+      segmentosFii: this.marketData.getSegmentosFii(),
     }).subscribe({
-      next: ({ perfil, config, meses }) => {
+      next: ({ perfil, config, meses, segmentosFii }) => {
         this.temDataNascimento = !!perfil.birthDate;
         this.idade = perfil.birthDate ? this.calcularIdade(perfil.birthDate) : null;
 
@@ -94,6 +94,12 @@ export class CarteiraComponent implements OnInit {
             });
           });
         }
+
+        this.segmentosFii = segmentosFii;
+        this.alocacoesSegmentoFii = segmentosFii.map((nome) => {
+          const existente = config?.alocacoesSegmentoFii.find((a) => a.segmento === nome);
+          return { nome, percentual: existente?.percentual ?? 0 };
+        });
 
         if (config) this.aplicarConfigCarregada(config);
         this.carregando = false;
@@ -113,8 +119,8 @@ export class CarteiraComponent implements OnInit {
     this.tipoRankingRecomendacao = config.tipoRankingRecomendacao ?? 'setor';
     this.permiteFracionario = config.permiteFracionario ?? true;
 
-    this.alocacoesSegmentoFii = SEGMENTOS_FII_PROVISORIOS.map((nome) => {
-      const existente = config.alocacoesSegmentoFii.find((a) => a.segmento === nome);
+    this.alocacoesSetorFii = TIPOS_FUNDO_FII.map((nome) => {
+      const existente = config.alocacoesSetorFii.find((a) => a.setor === nome);
       return { nome, percentual: existente?.percentual ?? 0 };
     });
   }
@@ -186,6 +192,10 @@ export class CarteiraComponent implements OnInit {
     return this.alocacoesSegmentoFii.reduce((acc, a) => acc + (a.percentual || 0), 0);
   }
 
+  get somaAlocacoesSetorFii(): number {
+    return this.alocacoesSetorFii.reduce((acc, a) => acc + (a.percentual || 0), 0);
+  }
+
   salvar(): void {
     this.salvando = true;
     this.salvoComSucesso = false;
@@ -202,6 +212,7 @@ export class CarteiraComponent implements OnInit {
       permiteFracionario: this.permiteFracionario,
       alocacoesSetor: this.alocacoesSetor,
       alocacoesSegmentoFii: this.alocacoesSegmentoFii,
+      alocacoesSetorFii: this.alocacoesSetorFii,
     }).subscribe({
       next: () => {
         this.salvando = false;

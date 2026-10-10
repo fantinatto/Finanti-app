@@ -12,6 +12,14 @@
     </button>
   </div>
 
+  <!-- ── Abas: pipelines de ranking completamente separados (ver FiiRankingService) ──── -->
+  <div class="ranking-abas">
+    <button class="ranking-aba-btn" [class.ranking-aba-btn--ativa]="abaRanking === 'acoes'" (click)="abaRanking = 'acoes'">Ações</button>
+    <button class="ranking-aba-btn" [class.ranking-aba-btn--ativa]="abaRanking === 'fii'" (click)="abaRanking = 'fii'">FIIs</button>
+  </div>
+
+  <div *ngIf="abaRanking === 'acoes'">
+
   <!-- ── Filtros ─────────────────────────────────────────────────────────────── -->
   <div class="filtros-bar">
 
@@ -218,6 +226,74 @@
       <span class="legenda-dot legenda-dot--medio"></span> 0.80–1.29 na média &nbsp;
       <span class="legenda-dot legenda-dot--baixo"></span> &lt; 0.80 abaixo da média
     </p>
+  </div>
+
+  </div>
+
+  <!-- ── Aba FII — pipeline próprio, sem setor/segmento/híbrido/Δ (ver análise de complexidade) ── -->
+  <div *ngIf="abaRanking === 'fii'">
+
+    <div class="filtros-bar">
+      <div class="filtro-grupo">
+        <label>Competência</label>
+        <select [(ngModel)]="anoMesSelecionadoFii" (ngModelChange)="onMesChangeFii()" [disabled]="carregandoMesesFii">
+          <option *ngIf="!mesesFii.length" value="">Sem dados</option>
+          <option *ngFor="let m of mesesFii" [value]="m">{{ formatMes(m) }}</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="ranking-fii-aviso" *ngIf="itensFii.length">
+      4 pilares (0-3, maior é melhor): Valuation (P/VP, 30%), Renda (DY + CAGR dividendo, 30%),
+      Liquidez/Porte (25%), Preservação de capital (CAGR cota + % caixa, 15%). Exclui FIIs com
+      liquidez abaixo de R$ 10.000/dia ou dado de fundamento visivelmente quebrado.
+    </p>
+
+    <div class="estado-loading" *ngIf="carregandoRankingFii">
+      <div class="spinner-lg"></div>
+      <span>Calculando ranking de FIIs...</span>
+    </div>
+
+    <div class="ranking-table-wrap" *ngIf="!carregandoRankingFii && itensFii.length">
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th class="col-fixed col-ticker">Ticker</th>
+            <th class="col-fixed col-nome">Nome</th>
+            <th class="col-fixed col-setor">Tipo</th>
+            <th class="col-fixed col-setor">Segmento</th>
+            <th class="col-num">DY</th>
+            <th class="col-num">P/VP</th>
+            <th class="col-num">Liquidez/dia</th>
+            <th class="col-score">Valuation</th>
+            <th class="col-score">Renda</th>
+            <th class="col-score">Liq./Porte</th>
+            <th class="col-score">Preservação</th>
+            <th class="col-score">Final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of itensFii">
+            <td class="col-fixed col-ticker">
+              <span class="ticker-badge">{{ item.ticker }}</span>
+              <span class="alerta-risco-fii" *ngIf="item.alertaRisco" [title]="descricaoAlertaRisco(item.alertaRisco)">⚠</span>
+            </td>
+            <td class="col-fixed col-nome" [title]="item.nome">{{ truncarNomeFii(item.nome) }}</td>
+            <td class="col-fixed col-setor">{{ item.tipoFundo ?? '—' }}</td>
+            <td class="col-fixed col-setor">{{ item.segmento ?? '—' }}</td>
+            <td class="col-num">{{ formatPercentualFii(item.dy) }}</td>
+            <td class="col-num">{{ item.pvp?.toFixed(2) ?? '—' }}</td>
+            <td class="col-num">{{ formatMoedaFii(item.liquidezMediaDiaria) }}</td>
+            <td class="col-score"><span class="score-badge" [ngClass]="scoreClass(item.scoreValuation)">{{ formatScore(item.scoreValuation) }}</span></td>
+            <td class="col-score"><span class="score-badge" [ngClass]="scoreClass(item.scoreRenda)">{{ formatScore(item.scoreRenda) }}</span></td>
+            <td class="col-score"><span class="score-badge" [ngClass]="scoreClass(item.scoreLiquidezPorte)">{{ formatScore(item.scoreLiquidezPorte) }}</span></td>
+            <td class="col-score"><span class="score-badge" [ngClass]="scoreClass(item.scorePreservacao)">{{ formatScore(item.scorePreservacao) }}</span></td>
+            <td class="col-score"><span class="score-badge" [ngClass]="scoreClass(item.scoreFinal)">{{ formatScore(item.scoreFinal) }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
 </div>

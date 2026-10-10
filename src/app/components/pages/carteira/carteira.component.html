@@ -103,7 +103,7 @@
     <!-- ── Alocação por Segmento de FII (dentro de FIIs) ───────────────────── -->
     <div class="card">
       <h2 class="card__titulo">Alocação por Segmento de FII <span class="card__sub">(dentro de FIIs)</span></h2>
-      <p class="card__legenda">Lista provisória — dados reais de fundamentos de FIIs chegam em breve.</p>
+      <p class="card__legenda">Catálogo real de segmentos (Status Invest) — segmento de atuação do fundo, ex: Shoppings, Logística, Lajes Corporativas.</p>
 
       <div class="alocacao-row" *ngFor="let a of alocacoesSegmentoFii">
         <span class="alocacao-nome">{{ a.nome }}</span>
@@ -112,6 +112,20 @@
       </div>
 
       <p class="soma-aviso" [class.soma-aviso--ok]="somaAlocacoesSegmentoFii === 100">Soma: {{ somaAlocacoesSegmentoFii }}% (ideal: 100%)</p>
+    </div>
+
+    <!-- ── Alocação por Setor de FII (tipo de fundo) ───────────────────────── -->
+    <div class="card">
+      <h2 class="card__titulo">Alocação por Setor de FII <span class="card__sub">(dentro de FIIs)</span></h2>
+      <p class="card__legenda">Tipo de fundo (Tijolo/Papel/Misto) — dimensão independente do segmento acima; um FII logístico, por exemplo, é um Fundo de Tijolo.</p>
+
+      <div class="alocacao-row" *ngFor="let a of alocacoesSetorFii">
+        <span class="alocacao-nome">{{ a.nome }}</span>
+        <input type="number" min="0" max="100" [(ngModel)]="a.percentual" [name]="'fii-setor-' + a.nome" />
+        <span class="alocacao-pct">%</span>
+      </div>
+
+      <p class="soma-aviso" [class.soma-aviso--ok]="somaAlocacoesSetorFii === 100">Soma: {{ somaAlocacoesSetorFii }}% (ideal: 100%)</p>
     </div>
 
     <!-- ── Estouro de balanceamento ─────────────────────────────────────────── -->

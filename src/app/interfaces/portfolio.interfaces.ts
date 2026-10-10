@@ -24,6 +24,9 @@ export interface PortfolioConfig {
   permiteFracionario: boolean;
   alocacoesSetor: { id: string; setor: string; percentual: number }[];
   alocacoesSegmentoFii: { id: string; segmento: string; percentual: number }[];
+  /** "Setor" de FII = tipo de fundo (Fundo de Tijolo/Papel/Misto) — dimensão independente do
+   * segmento de atuação (ver AlocacaoSetorFii no backend). */
+  alocacoesSetorFii: { id: string; setor: string; percentual: number }[];
 }
 
 export interface UpsertPortfolioConfigPayload {
@@ -37,6 +40,7 @@ export interface UpsertPortfolioConfigPayload {
   permiteFracionario?: boolean;
   alocacoesSetor: AlocacaoItem[];
   alocacoesSegmentoFii: AlocacaoItem[];
+  alocacoesSetorFii: AlocacaoItem[];
 }
 
 export interface SugestaoRegra {
@@ -51,6 +55,17 @@ export type TipoInvestimento = 'acao' | 'fii' | 'renda_fixa';
 
 export type TipoCarteira = 'real' | 'simulacao';
 
+export type TipoRentabilidadeRendaFixa = 'cdi' | 'prefixado';
+
+export interface RendaFixaDetalhe {
+  id: string;
+  tipoRentabilidade: TipoRentabilidadeRendaFixa;
+  percentualOuTaxa: number;
+  dataAplicacao: string;
+  dataVencimento: string;
+  isentoIr: boolean;
+}
+
 export interface Investimento {
   id: string;
   tipo: TipoInvestimento;
@@ -59,6 +74,8 @@ export interface Investimento {
   precoMedio: number;
   quantidade: number;
   carteira: TipoCarteira;
+  /** Só pra tipo='renda_fixa' — null em posições sem % CDI/prefixado cadastrado ainda. */
+  rendaFixaDetalhe?: RendaFixaDetalhe | null;
 }
 
 export interface UpsertInvestimentoPayload {
@@ -72,6 +89,39 @@ export interface UpsertInvestimentoPayload {
   registrarFiscal?: boolean;
   dataOperacao?: string;
   custosFiscais?: number;
+  /** Só pra tipo='renda_fixa' — ausente preserva o comportamento antigo (valorAtual estático). */
+  rendaFixa?: {
+    tipoRentabilidade: TipoRentabilidadeRendaFixa;
+    percentualOuTaxa: number;
+    dataAplicacao: string;
+    dataVencimento: string;
+    isentoIr?: boolean;
+  };
+}
+
+export interface CenarioSimulacaoRendaFixa {
+  nome: string;
+  valorInvestido: number;
+  tipoRentabilidade: TipoRentabilidadeRendaFixa;
+  percentualOuTaxa: number;
+  dataAplicacao: string;
+  dataVencimento: string;
+  isentoIr?: boolean;
+}
+
+export interface ResultadoSimulacaoRendaFixa {
+  nome: string;
+  valorInvestido: number;
+  dias: number;
+  taxaAnualEquivalente: number;
+  valorBruto: number;
+  rendimentoBruto: number;
+  aliquotaIr: number;
+  ir: number;
+  valorLiquido: number;
+  rendimentoLiquido: number;
+  rentabilidadeLiquidaPercentual: number;
+  melhor: boolean;
 }
 
 export interface GanhoInvestimento {
@@ -86,6 +136,8 @@ export interface GanhoInvestimento {
   valorAtual: number | null;
   ganho: number | null;
   ganhoPercentual: number | null;
+  /** Setor pra tipo='acao', segmento pra tipo='fii' — null pra renda_fixa ou sem dado. */
+  classificacao: string | null;
 }
 
 export type CategoriaAcao =
@@ -124,6 +176,32 @@ export interface RecomendacaoHolding {
   prioridade: 'alta' | 'media' | 'baixa' | null;
 }
 
+/** Espelha RecomendacaoHolding, mas pra FII — troca setor/scoreQualidade/scoreRisco/scorePreco
+ * pelos 4 pilares do ranking de FII. Reusa CategoriaAcao como está (mesma matriz de decisão). */
+export interface RecomendacaoHoldingFii {
+  id: string;
+  ticker: string;
+  nome: string;
+  segmento: string | null;
+  scoreFinal: number | null;
+  scoreValuation: number | null;
+  scoreRenda: number | null;
+  scoreLiquidezPorte: number | null;
+  scorePreservacao: number | null;
+  percentualReal: number | null;
+  percentualAlvo: number | null;
+  categoriaAcao: CategoriaAcao;
+  sugestaoTroca: { ticker: string; nome: string; scoreFinal: number | null } | null;
+  motivoTroca: string | null;
+  deltaScoreTroca: number | null;
+  sugestaoRebalanceamento: 'comprar' | 'vender' | null;
+  valorSugerido: number | null;
+  quantidadeSugerida: number | null;
+  prioridade: 'alta' | 'media' | 'baixa' | null;
+  /** 'desenvolvimento' | 'dividend_trap' | 'desenvolvimento+dividend_trap' | null. */
+  alertaRisco: string | null;
+}
+
 export interface BalanceamentoSetor {
   setor: string;
   valorAtual: number;
@@ -134,6 +212,64 @@ export interface BalanceamentoSetor {
   status: 'sobrealocado' | 'subalocado' | 'equilibrado';
   /** true quando o setor tem alvo configurado mas ZERO ações hoje — "setor descoberto". */
   semNenhumaAcao: boolean;
+}
+
+/** Espelha BalanceamentoSetor, mas pro segmento de atuação do FII (Shoppings, Lajes
+ * Corporativas, Logística, etc — ver Fii.segmento/getBalanceamentoPorSegmentoFii). */
+export interface BalanceamentoSegmentoFii {
+  segmento: string;
+  valorAtual: number;
+  percentualAtual: number;
+  percentualAlvo: number;
+  diferenca: number;
+  status: 'sobrealocado' | 'subalocado' | 'equilibrado';
+  semNenhumFii: boolean;
+}
+
+/** Espelha BalanceamentoSegmentoFii, mas pro "setor" de FII (tipo de fundo: Fundo de
+ * Tijolo/Papel/Misto — ver Fii.tipoFundo/getBalanceamentoPorSetorFii). */
+export interface BalanceamentoSetorFii {
+  setor: string;
+  valorAtual: number;
+  percentualAtual: number;
+  percentualAlvo: number;
+  diferenca: number;
+  status: 'sobrealocado' | 'subalocado' | 'equilibrado';
+  semNenhumFii: boolean;
+}
+
+/** Fatia de composição pra gráfico de diversificação (getDiversificacao) — percentual sempre
+ * relativo ao total DESSA fatia específica (macro = % da carteira, drill-down = % da categoria). */
+export interface FatiaDiversificacao {
+  chave: string;
+  valor: number;
+  percentual: number;
+}
+
+export interface DiversificacaoCarteira {
+  macro: FatiaDiversificacao[];
+  porSetorAcao: FatiaDiversificacao[];
+  porTipoFundoFii: FatiaDiversificacao[];
+}
+
+/** Espelha BalanceamentoSetor, mas pro macro (Ações/FIIs/Renda Fixa) contra o alvo configurado
+ * em Carteira — ver getResumoDiversificacao. Sempre as 3 chaves, mesmo com valor/alvo zero. */
+export interface BalanceamentoMacro {
+  chave: string;
+  valorAtual: number;
+  percentualAtual: number;
+  percentualAlvo: number;
+  diferenca: number;
+  status: 'sobrealocado' | 'subalocado' | 'equilibrado';
+}
+
+export interface ResumoDiversificacao {
+  macro: BalanceamentoMacro[];
+  /** 100 = carteira perfeitamente alinhada ao alvo macro configurado. */
+  percentualDiversificado: number;
+  /** Complemento de percentualDiversificado — % do valor que precisaria migrar entre
+   * Ações/FIIs/Renda Fixa pra bater o alvo. */
+  percentualFaltante: number;
 }
 
 /** Qualidade/Risco/Preço/Final médios da carteira, ponderados pelo valor atual de cada posição. */
@@ -147,6 +283,22 @@ export interface SaudeCarteira {
   pesoPreco: number;
   pesoFinal: number;
   valorTotalCarteira: number;
+}
+
+/** Espelha SaudeCarteira, mas pros 4 pilares do ranking de FII (ver FiiRankingItem/
+ * getSaudeCarteiraFii) em vez de Qualidade/Risco/Preço de ação. */
+export interface SaudeCarteiraFii {
+  scoreValuationMedio: number | null;
+  scoreRendaMedio: number | null;
+  scoreLiquidezPorteMedio: number | null;
+  scorePreservacaoMedio: number | null;
+  scoreFinalMedio: number | null;
+  pesoValuation: number;
+  pesoRenda: number;
+  pesoLiquidezPorte: number;
+  pesoPreservacao: number;
+  pesoFinal: number;
+  valorTotalFiis: number;
 }
 
 // ── Preview do motor novo (Search Engine) — GET /portfolio/recommendation-engine/preview ──────

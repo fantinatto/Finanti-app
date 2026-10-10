@@ -4,324 +4,820 @@
   <div class="investimentos-header">
     <div class="investimentos-title-group">
       <h1>Meus Investimentos</h1>
-      <p>Cadastre suas posições reais (ações, FIIs e renda fixa) pra acompanhar o ganho mês a mês contra a cotação do ranking.</p>
+      <p *ngIf="visaoPagina === 'geral'">Cadastre suas posições reais (ações, FIIs e renda fixa) pra acompanhar o ganho mês a mês contra a cotação do ranking.</p>
+      <p *ngIf="visaoPagina !== 'geral'">Visão dedicada — {{ tituloPilarAtual }}.</p>
     </div>
+    <ng-container *ngTemplateOutlet="navPilares"></ng-container>
+    <button class="btn-voltar-pilar" *ngIf="visaoPagina !== 'geral'" (click)="mudarVisao('geral')">← Voltar pra visão geral</button>
   </div>
 
-  <!-- ── Formulário ─────────────────────────────────────────────────────────── -->
-  <div class="form-card">
-    <h2 class="form-card__titulo">{{ editandoId ? 'Editar investimento' : 'Comprar (adicionar posição)' }}</h2>
-
-    <div class="form-grid">
-      <div class="campo">
-        <label>Tipo</label>
-        <select [(ngModel)]="form.tipo">
-          <option value="acao">Ação</option>
-          <option value="fii">FII</option>
-          <option value="renda_fixa">Renda Fixa</option>
-        </select>
-      </div>
-
-      <div class="campo campo--ticker-busca" *ngIf="precisaTicker">
-        <label>Ticker</label>
-        <input
-          type="text"
-          [ngModel]="form.ticker"
-          (ngModelChange)="onTickerInput($event)"
-          (blur)="fecharBuscaTicker()"
-          placeholder="Ex: PETR4"
-          maxlength="10"
-          autocomplete="off"
-        />
-        <span class="ticker-busca__spinner" *ngIf="buscandoTicker">Buscando...</span>
-        <ul class="ticker-busca__lista" *ngIf="resultadosBuscaTicker.length">
-          <li *ngFor="let r of resultadosBuscaTicker" (click)="selecionarTicker(r)">
-            <span class="ticker-busca__ticker">{{ r.ticker }}</span>
-            <span class="ticker-busca__nome">{{ r.nome }}</span>
-            <span class="ticker-busca__preco" *ngIf="r.precoFechamento != null">
-              {{ formatMoeda(r.precoFechamento) }} <small>({{ formatMes(r.anoMes ?? '') }})</small>
-            </span>
-          </li>
-        </ul>
-      </div>
-
-      <div class="campo campo--wide">
-        <label>Nome</label>
-        <input type="text" [(ngModel)]="form.nome" placeholder="Ex: Petrobras PN, ou 'Tesouro Selic 2029'" />
-      </div>
-
-      <div class="campo">
-        <label>Preço médio (R$)</label>
-        <input type="number" [(ngModel)]="form.precoMedio" min="0" step="0.01" placeholder="0,00" />
-      </div>
-
-      <div class="campo">
-        <label>Quantidade</label>
-        <input type="number" [(ngModel)]="form.quantidade" min="0" step="0.01" placeholder="0" />
-      </div>
-    </div>
-
-    <!-- Só na criação de ação/FII — edição é uma correção da posição, não uma operação nova, e
-         renda fixa não tem bucket fiscal (sem ticker/assetType). Ver docs/FEATURE_SPEC_FISCAL.md. -->
-    <div class="fiscal-sync-box" *ngIf="!editandoId && precisaTicker">
-      <label class="fiscal-sync-box__toggle">
-        <input type="checkbox" [(ngModel)]="form.registrarFiscal" />
-        Também registrar essa compra no Fiscal
-      </label>
-      <p class="fiscal-sync-box__ajuda">
-        Desmarque se esta ação já fazia parte da sua carteira antes de hoje (não é uma compra nova).
-      </p>
-      <div class="fiscal-sync-box__campos" *ngIf="form.registrarFiscal">
-        <div class="campo">
-          <label>Data da operação</label>
-          <input type="date" [(ngModel)]="form.dataOperacao" />
-        </div>
-        <div class="campo">
-          <label>Custos (corretagem etc.)</label>
-          <input type="number" [(ngModel)]="form.custosFiscais" min="0" step="0.01" placeholder="0,00" />
-        </div>
-      </div>
-    </div>
-
-    <div class="form-acoes">
-      <button class="btn-secundario" *ngIf="editandoId" (click)="cancelarEdicao()">Cancelar</button>
-      <button class="btn-primario" [disabled]="!formValido || salvando" (click)="salvar()">
-        {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar alterações' : 'Comprar') }}
-      </button>
-    </div>
-  </div>
-
-  <!-- ── Resumo + seletor de mês ────────────────────────────────────────────── -->
-  <div class="resumo-bar" *ngIf="investimentos.length">
-    <div class="resumo-bar__item">
-      <span class="resumo-bar__label">Investido</span>
-      <span class="resumo-bar__valor">{{ formatMoeda(valorInvestidoTotal) }}</span>
-    </div>
-    <div class="resumo-bar__item">
-      <span class="resumo-bar__label">Valor atual</span>
-      <span class="resumo-bar__valor">{{ formatMoeda(valorAtualTotal) }}</span>
-    </div>
-    <div class="resumo-bar__item">
-      <span class="resumo-bar__label">Ganho</span>
-      <span class="resumo-bar__valor" [ngClass]="classeGanho(ganhoTotal)">{{ formatMoeda(ganhoTotal) }}</span>
-    </div>
-
-    <div class="resumo-bar__mes">
-      <label>Competência</label>
-      <select [(ngModel)]="anoMesSelecionado" (ngModelChange)="onMesChange()" [disabled]="!meses.length">
-        <option *ngIf="!meses.length" value="">Sem dados</option>
-        <option *ngFor="let m of meses" [value]="m">{{ formatMes(m) }}</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- ── Loading ────────────────────────────────────────────────────────────── -->
+  <!-- ── Loading inicial ────────────────────────────────────────────────────── -->
   <div class="estado-loading" *ngIf="carregando">
     <div class="spinner-lg"></div>
     <span>Carregando investimentos...</span>
   </div>
 
-  <!-- ── Empty state ────────────────────────────────────────────────────────── -->
-  <div class="estado-vazio" *ngIf="!carregando && !investimentos.length">
-    <div class="estado-vazio__icon">💼</div>
-    <h3>Nenhum investimento cadastrado</h3>
-    <p>Use o formulário acima pra registrar suas posições.</p>
-  </div>
+  <!-- ══════════════════════════ Templates compartilhados ══════════════════════════ -->
 
-  <!-- ── Tabela ─────────────────────────────────────────────────────────────── -->
-  <div class="investimentos-table-wrap" *ngIf="!carregando && investimentos.length">
-    <table class="investimentos-table">
-      <thead>
-        <tr>
-          <th class="col-tipo">Tipo</th>
-          <th class="col-ticker">Ticker</th>
-          <th class="col-nome">Nome</th>
-          <th class="col-num">Preço médio</th>
-          <th class="col-num">Quantidade</th>
-          <th class="col-num">Cotação ({{ formatMes(anoMesSelecionado) }})</th>
-          <th class="col-num">Valor atual</th>
-          <th class="col-num">Ganho</th>
-          <th class="col-acoes"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let inv of investimentos">
-          <td class="col-tipo"><span class="tipo-badge" [ngClass]="'tipo-badge--' + inv.tipo">{{ labelTipo[inv.tipo] }}</span></td>
-          <td class="col-ticker">
-            <span class="ticker-badge" *ngIf="inv.ticker">{{ inv.ticker }}</span>
-            <span class="sem-ticker" *ngIf="!inv.ticker">—</span>
-          </td>
-          <td class="col-nome">{{ inv.nome }}</td>
-          <td class="col-num">{{ formatMoeda(inv.precoMedio) }}</td>
-          <td class="col-num">{{ inv.quantidade }}</td>
-          <td class="col-num" [attr.colspan]="naoNegociavel(inv) ? 3 : null">
-            <span class="aviso-nao-negociavel" *ngIf="naoNegociavel(inv); else cotacaoNormal" title="Ticker não retornou cotação na última coleta">
-              Esse ativo não está mais disponível para investimento
-            </span>
-            <ng-template #cotacaoNormal>{{ formatMoeda(ganhoDe(inv.id)?.cotacaoAtual ?? null) }}</ng-template>
-          </td>
-          <td class="col-num" *ngIf="!naoNegociavel(inv)">{{ formatMoeda(ganhoDe(inv.id)?.valorAtual ?? null) }}</td>
-          <td class="col-num" *ngIf="!naoNegociavel(inv)">
-            <span [ngClass]="classeGanho(ganhoDe(inv.id)?.ganho ?? null)">
-              {{ formatMoeda(ganhoDe(inv.id)?.ganho ?? null) }}
-              <small *ngIf="ganhoDe(inv.id)?.ganhoPercentual !== null">({{ formatPercentual(ganhoDe(inv.id)?.ganhoPercentual ?? null) }})</small>
-            </span>
-          </td>
-          <td class="col-acoes">
-            <button class="btn-icone" title="Editar" (click)="editar(inv)">✎</button>
-            <button class="btn-icone btn-icone--vender" *ngIf="inv.ticker" title="Vender" [disabled]="vendendoId === inv.id" (click)="vender(inv)">$</button>
-            <button class="btn-icone btn-icone--remover" title="Remover" [disabled]="removendoId === inv.id" (click)="remover(inv)">✕</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ── Saúde da carteira ──────────────────────────────────────────────────── -->
-  <div class="saude-card" *ngIf="!carregando && saude">
-    <h2 class="saude-card__titulo">Saúde da carteira</h2>
-    <p class="saude-card__aviso">
-      Qualidade, Risco e Preço médios, ponderados pelo valor de cada posição — complementa o
-      balanceamento por setor com uma leitura do conjunto.
-    </p>
-
-    <div class="estado-loading" *ngIf="carregandoSaude">
-      <div class="spinner-lg"></div>
-      <span>Calculando saúde da carteira...</span>
+  <!-- Navegação direta entre pilares — reaproveitado no cabeçalho e no rodapé das 3 visões
+       dedicadas, pra trocar de Ações/FIIs/Renda Fixa sem precisar voltar pra visão geral. -->
+  <ng-template #navPilares>
+    <div class="pilar-nav" *ngIf="visaoPagina !== 'geral'">
+      <button type="button" class="pilar-nav__btn" [class.active]="visaoPagina === 'acoes'" (click)="mudarVisao('acoes')">Ações</button>
+      <button type="button" class="pilar-nav__btn" [class.active]="visaoPagina === 'fii'" (click)="mudarVisao('fii')">FIIs</button>
+      <button type="button" class="pilar-nav__btn" [class.active]="visaoPagina === 'rendaFixa'" (click)="mudarVisao('rendaFixa')">Renda Fixa</button>
     </div>
+  </ng-template>
 
-    <div class="saude-grid" *ngIf="!carregandoSaude">
-      <div class="saude-item">
-        <span class="saude-item__label">Qualidade</span>
-        <span class="score-badge" [ngClass]="scoreClass(saude.scoreQualidadeMedio)">{{ formatScore(saude.scoreQualidadeMedio) }}</span>
+  <!-- Saúde da carteira — reaproveitado em 'geral' (título genérico) e 'acoes' (mesmo dado, só
+       muda o título — getSaudeCarteira já é ações-only no backend). -->
+  <ng-template #blocoSaude>
+    <div class="saude-card" *ngIf="!carregando && saude">
+      <h2 class="saude-card__titulo">{{ tituloSaudeAtual }}</h2>
+      <p class="saude-card__aviso">
+        Qualidade, Risco e Preço médios, ponderados pelo valor de cada posição — complementa o
+        balanceamento por setor com uma leitura do conjunto.
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoSaude">
+        <div class="spinner-lg"></div>
+        <span>Calculando saúde da carteira...</span>
       </div>
-      <div class="saude-item">
-        <span class="saude-item__label">Risco</span>
-        <span class="score-badge" [ngClass]="scoreClass(saude.riscoCompostoMedio)">{{ formatScore(saude.riscoCompostoMedio) }}</span>
-      </div>
-      <div class="saude-item">
-        <span class="saude-item__label">Preço</span>
-        <span class="score-badge" [ngClass]="scoreClass(saude.scorePrecoMedio)">{{ formatScore(saude.scorePrecoMedio) }}</span>
-      </div>
-      <div class="saude-item saude-item--final">
-        <span class="saude-item__label">Final</span>
-        <span class="score-badge" [ngClass]="scoreClass(saude.scoreFinalMedio)">{{ formatScore(saude.scoreFinalMedio) }}</span>
+
+      <div class="saude-grid" *ngIf="!carregandoSaude">
+        <div class="saude-item">
+          <span class="saude-item__label">Qualidade</span>
+          <span class="score-badge" [ngClass]="scoreClass(saude.scoreQualidadeMedio)">{{ formatScore(saude.scoreQualidadeMedio) }}</span>
+        </div>
+        <div class="saude-item">
+          <span class="saude-item__label">Risco</span>
+          <span class="score-badge" [ngClass]="scoreClass(saude.riscoCompostoMedio)">{{ formatScore(saude.riscoCompostoMedio) }}</span>
+        </div>
+        <div class="saude-item">
+          <span class="saude-item__label">Preço</span>
+          <span class="score-badge" [ngClass]="scoreClass(saude.scorePrecoMedio)">{{ formatScore(saude.scorePrecoMedio) }}</span>
+        </div>
+        <div class="saude-item saude-item--final">
+          <span class="saude-item__label">Final</span>
+          <span class="score-badge" [ngClass]="scoreClass(saude.scoreFinalMedio)">{{ formatScore(saude.scoreFinalMedio) }}</span>
+        </div>
       </div>
     </div>
-  </div>
+  </ng-template>
 
-  <!-- ── Balanceamento por setor ────────────────────────────────────────────── -->
-  <div class="balanceamento-card" *ngIf="!carregando && balanceamento.length">
-    <h2 class="balanceamento-card__titulo">Balanceamento por setor</h2>
-    <p class="balanceamento-card__aviso">
-      Compara o que cada setor representa hoje contra o alvo configurado em
-      <a routerLink="/account/settings">Configurações</a>. Mais desbalanceado primeiro.
-    </p>
+  <!-- Diversificação / "X por Y" — reaproveitado em 'geral' (macro), 'acoes' (por setor) e
+       'fii' (por tipo de fundo). Renda Fixa não tem classificação, não usa este bloco. -->
+  <ng-template #blocoGraficoDiversificacao>
+    <div class="diversificacao-card" *ngIf="diversificacao && fatiasDiversificacaoAtual.length">
+      <div class="diversificacao-card__header">
+        <h2 class="diversificacao-card__titulo">{{ tituloDiversificacaoAtual }}</h2>
+      </div>
+      <p class="diversificacao-card__dica" *ngIf="visaoPagina === 'geral'">Clique numa fatia pra ver a visão dedicada de Ações, FIIs ou Renda Fixa.</p>
+      <div class="estado-loading" *ngIf="carregandoGraficos">
+        <div class="spinner-lg"></div>
+        <span>Carregando gráfico...</span>
+      </div>
+      <div class="diversificacao-card__chart" *ngIf="!carregandoGraficos">
+        <canvas
+          baseChart
+          [data]="chartDataDiversificacao"
+          [options]="chartOptionsDiversificacao"
+          type="doughnut"
+          (chartClick)="onClickDiversificacao($event)"
+        ></canvas>
+      </div>
+    </div>
+  </ng-template>
 
-    <div class="estado-loading" *ngIf="carregandoBalanceamento">
-      <div class="spinner-lg"></div>
-      <span>Calculando balanceamento...</span>
+  <!-- Formulário de Comprar — reaproveitado nas 3 visões de pilar (Tipo pré-selecionado pelo
+       default da visão, ainda editável no dropdown). Não aparece em 'geral'. -->
+  <ng-template #blocoFormulario>
+    <div class="form-card">
+      <h2 class="form-card__titulo">{{ editandoId ? 'Editar investimento' : 'Comprar (adicionar posição)' }}</h2>
+
+      <div class="form-grid">
+        <div class="campo">
+          <label>Tipo</label>
+          <select [(ngModel)]="form.tipo" (ngModelChange)="onTipoChange()">
+            <option value="acao">Ação</option>
+            <option value="fii">FII</option>
+            <option value="renda_fixa">Renda Fixa</option>
+          </select>
+        </div>
+
+        <div class="campo campo--ticker-busca" *ngIf="precisaTicker">
+          <label>Ticker</label>
+          <input
+            type="text"
+            [ngModel]="form.ticker"
+            (ngModelChange)="onTickerInput($event)"
+            (blur)="fecharBuscaTicker()"
+            placeholder="Ex: PETR4"
+            maxlength="10"
+            autocomplete="off"
+          />
+          <span class="ticker-busca__spinner" *ngIf="buscandoTicker">Buscando...</span>
+          <ul class="ticker-busca__lista" *ngIf="resultadosBuscaTicker.length">
+            <li *ngFor="let r of resultadosBuscaTicker" (click)="selecionarTicker(r)">
+              <span class="ticker-busca__ticker">{{ r.ticker }}</span>
+              <span class="ticker-busca__nome">{{ r.nome }}</span>
+              <span class="ticker-busca__preco" *ngIf="r.precoFechamento != null">
+                {{ formatMoeda(r.precoFechamento) }} <small *ngIf="r.anoMes">({{ formatMes(r.anoMes) }})</small>
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="campo campo--wide">
+          <label>Nome</label>
+          <input type="text" [(ngModel)]="form.nome" placeholder="Ex: Petrobras PN, ou 'Tesouro Selic 2029'" />
+        </div>
+
+        <div class="campo">
+          <label>Preço médio (R$)</label>
+          <input type="number" [(ngModel)]="form.precoMedio" min="0" step="0.01" placeholder="0,00" />
+        </div>
+
+        <div class="campo">
+          <label>Quantidade</label>
+          <input type="number" [(ngModel)]="form.quantidade" min="0" step="0.01" placeholder="0" />
+        </div>
+      </div>
+
+      <!-- Rentabilidade — só renda fixa. dataVencimentoRF em branco é o sinal de "não enviar
+           rendaFixa no payload" (ver salvar() na base) — por isso fica fora do form-grid comum,
+           pra deixar claro que é um bloco opcional/adicional, não um campo igual aos de cima. -->
+      <div class="form-grid form-grid--renda-fixa" *ngIf="form.tipo === 'renda_fixa'">
+        <div class="campo">
+          <label>Rentabilidade</label>
+          <select [(ngModel)]="form.tipoRentabilidadeRF">
+            <option value="cdi">% do CDI</option>
+            <option value="prefixado">Prefixado (% a.a.)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>{{ form.tipoRentabilidadeRF === 'cdi' ? '% do CDI' : 'Taxa (% a.a.)' }}</label>
+          <input type="number" [(ngModel)]="form.percentualOuTaxaRF" min="0" step="0.1" placeholder="Ex: 100" />
+        </div>
+        <div class="campo">
+          <label>Data da aplicação</label>
+          <input type="date" [(ngModel)]="form.dataAplicacaoRF" />
+        </div>
+        <div class="campo">
+          <label>Vencimento</label>
+          <input type="date" [(ngModel)]="form.dataVencimentoRF" />
+        </div>
+        <div class="campo campo--checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="form.isentoIrRF" />
+            Isento de IR (LCI/LCA/CRI/CRA)
+          </label>
+        </div>
+      </div>
+      <p class="form-grid__aviso" *ngIf="form.tipo === 'renda_fixa' && !form.dataVencimentoRF">
+        Preencha o vencimento pra calcular o rendimento projetado — sem isso a posição fica com valor estático (sem juros), como antes.
+      </p>
+
+      <!-- Só na criação de ação/FII — edição é uma correção da posição, não uma operação nova, e
+           renda fixa não tem bucket fiscal (sem ticker/assetType). Ver docs/FEATURE_SPEC_FISCAL.md. -->
+      <div class="fiscal-sync-box" *ngIf="!editandoId && precisaTicker">
+        <label class="fiscal-sync-box__toggle">
+          <input type="checkbox" [(ngModel)]="form.registrarFiscal" />
+          Também registrar essa compra no Fiscal
+        </label>
+        <p class="fiscal-sync-box__ajuda">
+          Desmarque se esta ação já fazia parte da sua carteira antes de hoje (não é uma compra nova).
+        </p>
+        <div class="fiscal-sync-box__campos" *ngIf="form.registrarFiscal">
+          <div class="campo">
+            <label>Data da operação</label>
+            <input type="date" [(ngModel)]="form.dataOperacao" />
+          </div>
+          <div class="campo">
+            <label>Custos (corretagem etc.)</label>
+            <input type="number" [(ngModel)]="form.custosFiscais" min="0" step="0.01" placeholder="0,00" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-acoes">
+        <button class="btn-secundario" *ngIf="editandoId" (click)="cancelarEdicao()">Cancelar</button>
+        <button class="btn-primario" [disabled]="!formValido || salvando" (click)="salvar()">
+          {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar alterações' : 'Comprar') }}
+        </button>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- Tabela de posições — reaproveitada nas 3 visões de pilar, cada uma já filtrando
+       investimentosVisiveis por tipo (getter no componente). -->
+  <ng-template #blocoTabela>
+    <div class="estado-vazio" *ngIf="!carregando && !investimentosVisiveis.length">
+      <div class="estado-vazio__icon">💼</div>
+      <h3>{{ tituloVazioTabela }}</h3>
+      <p>Use o formulário acima pra registrar suas posições.</p>
     </div>
 
-    <div class="balanceamento-table-wrap" *ngIf="!carregandoBalanceamento">
-      <table class="balanceamento-table">
+    <div class="investimentos-table-wrap" *ngIf="!carregando && investimentosVisiveis.length">
+      <table class="investimentos-table">
         <thead>
           <tr>
-            <th class="col-setor">Setor</th>
-            <th class="col-num">Valor atual</th>
-            <th class="col-num">% atual</th>
-            <th class="col-num">% alvo</th>
-            <th class="col-num">Diferença</th>
-            <th class="col-status">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let b of balanceamento">
-            <td class="col-setor">
-              {{ b.setor }}
-              <span class="setor-descoberto-badge" *ngIf="b.semNenhumaAcao" title="Nenhuma ação sua nesse setor hoje">sem ação</span>
-            </td>
-            <td class="col-num">{{ formatMoeda(b.valorAtual) }}</td>
-            <td class="col-num">{{ b.percentualAtual.toFixed(1) }}%</td>
-            <td class="col-num">{{ b.percentualAlvo.toFixed(1) }}%</td>
-            <td class="col-num">{{ b.diferenca >= 0 ? '+' : '' }}{{ b.diferenca.toFixed(1) }} pp</td>
-            <td class="col-status">
-              <span class="status-badge" [ngClass]="statusSetorClasse(b.status)">{{ statusSetorLabel(b.status) }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ── Ranking das ações da carteira + recomendações ──────────────────────── -->
-  <div class="ranking-carteira-card" *ngIf="!carregando && acoesInvestidas.length">
-    <h2 class="ranking-carteira-card__titulo">Ranking das suas ações</h2>
-    <p class="ranking-carteira-card__aviso">
-      Score do mês selecionado pra cada ação da carteira. Sugestões de troca comparam com o resto do setor;
-      sugestões de rebalanceamento comparam a alocação real do setor contra o alvo configurado em
-      <a routerLink="/carteira">Carteira</a>.
-    </p>
-
-    <div class="estado-loading" *ngIf="carregandoRecomendacoes">
-      <div class="spinner-lg"></div>
-      <span>Calculando recomendações...</span>
-    </div>
-
-    <div class="ranking-carteira-table-wrap" *ngIf="!carregandoRecomendacoes">
-      <table class="ranking-carteira-table">
-        <thead>
-          <tr>
+            <th class="col-tipo">Tipo</th>
             <th class="col-ticker">Ticker</th>
             <th class="col-nome">Nome</th>
-            <th class="col-setor">Setor</th>
-            <th class="col-num">Final</th>
-            <th class="col-num">Qualidade</th>
-            <th class="col-num">Risco</th>
-            <th class="col-num">Preço</th>
-            <th class="col-prioridade">Prioridade</th>
-            <th class="col-recomendacao">Recomendação</th>
+            <th class="col-setor">Setor/Segmento</th>
+            <th class="col-num">Preço médio</th>
+            <th class="col-num">Quantidade</th>
+            <th class="col-num">Cotação ({{ formatMes(anoMesSelecionado) }})</th>
+            <th class="col-num">Valor atual</th>
+            <th class="col-num">Ganho</th>
+            <th class="col-acoes"></th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let inv of acoesInvestidas">
-            <td class="col-ticker"><span class="ticker-badge">{{ inv.ticker }}</span></td>
+          <tr *ngFor="let inv of investimentosVisiveis">
+            <td class="col-tipo"><span class="tipo-badge" [ngClass]="'tipo-badge--' + inv.tipo">{{ labelTipo[inv.tipo] }}</span></td>
+            <td class="col-ticker">
+              <span class="ticker-badge" *ngIf="inv.ticker">{{ inv.ticker }}</span>
+              <span class="sem-ticker" *ngIf="!inv.ticker">—</span>
+            </td>
             <td class="col-nome">{{ inv.nome }}</td>
-            <td class="col-setor">{{ recomendacaoDe(inv.id)?.setor ?? '—' }}</td>
-            <td class="col-num">
-              <span class="score-badge" [ngClass]="scoreClass(recomendacaoDe(inv.id)?.scoreFinal ?? null)">
-                {{ formatScore(recomendacaoDe(inv.id)?.scoreFinal ?? null) }}
+            <td class="col-setor">{{ ganhoDe(inv.id)?.classificacao ?? '—' }}</td>
+            <td class="col-num">{{ formatMoeda(inv.precoMedio) }}</td>
+            <td class="col-num">{{ inv.quantidade }}</td>
+            <td class="col-num" [attr.colspan]="naoNegociavel(inv) ? 3 : null">
+              <span class="aviso-nao-negociavel" *ngIf="naoNegociavel(inv); else cotacaoNormal" title="Ticker não retornou cotação na última coleta">
+                Esse ativo não está mais disponível para investimento
+              </span>
+              <ng-template #cotacaoNormal>{{ formatMoeda(ganhoDe(inv.id)?.cotacaoAtual ?? null) }}</ng-template>
+            </td>
+            <td class="col-num" *ngIf="!naoNegociavel(inv)">{{ formatMoeda(ganhoDe(inv.id)?.valorAtual ?? null) }}</td>
+            <td class="col-num" *ngIf="!naoNegociavel(inv)">
+              <span [ngClass]="classeGanho(ganhoDe(inv.id)?.ganho ?? null)">
+                {{ formatMoeda(ganhoDe(inv.id)?.ganho ?? null) }}
+                <small *ngIf="ganhoDe(inv.id)?.ganhoPercentual !== null">({{ formatPercentual(ganhoDe(inv.id)?.ganhoPercentual ?? null) }})</small>
               </span>
             </td>
-            <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scoreQualidade ?? null) }}</td>
-            <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scoreRisco ?? null) }}</td>
-            <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scorePreco ?? null) }}</td>
-            <td class="col-prioridade">
-              <span class="prioridade-badge" [ngClass]="prioridadeClasse(recomendacaoDe(inv.id)?.prioridade ?? null)">
-                {{ prioridadeLabel(recomendacaoDe(inv.id)?.prioridade ?? null) }}
-              </span>
-            </td>
-            <td class="col-recomendacao" *ngIf="recomendacaoDe(inv.id) as rec">
-              <span class="recomendacao-vazia" *ngIf="rec.categoriaAcao === 'manter'">—</span>
-
-              <div class="recomendacao-pill" [ngClass]="categoriaClasse(rec.categoriaAcao)" *ngIf="rec.categoriaAcao !== 'manter'" [title]="rec.motivoTroca ?? ''">
-                <span class="recomendacao-pill__tag">{{ categoriaLabel(rec.categoriaAcao) }}</span>
-                <span class="recomendacao-pill__texto">
-                  {{ textoRecomendacao(rec) }}
-                  <span class="recomendacao-pill__delta" *ngIf="rec.deltaScoreTroca !== null">{{ deltaScoreLabel(rec.deltaScoreTroca) }}</span>
-                </span>
-              </div>
+            <td class="col-acoes">
+              <button class="btn-icone" title="Editar" (click)="editar(inv)">✎</button>
+              <button class="btn-icone btn-icone--vender" *ngIf="inv.ticker" title="Vender" [disabled]="vendendoId === inv.id" (click)="vender(inv)">$</button>
+              <button class="btn-icone btn-icone--remover" title="Remover" [disabled]="removendoId === inv.id" (click)="remover(inv)">✕</button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+  </ng-template>
 
-  <!-- ── Gráfico de evolução ────────────────────────────────────────────────── -->
-  <div class="historico-card" *ngIf="historico.length">
-    <h2 class="historico-card__titulo">Evolução da carteira</h2>
-    <canvas baseChart [data]="chartData" [options]="chartOptions" type="line"></canvas>
-  </div>
+  <!-- Evolução por pilar — reaproveitado nas 3 visões de pilar, título e campo plotado variam
+       via tituloPilarAtual/chartDataPorPilar (getters do componente). -->
+  <ng-template #blocoEvolucaoPilar>
+    <div class="historico-card" *ngIf="historico.length">
+      <h2 class="historico-card__titulo">Evolução da carteira ({{ tituloPilarAtual }})</h2>
+      <div class="estado-loading" *ngIf="carregandoGraficos">
+        <div class="spinner-lg"></div>
+        <span>Carregando gráfico...</span>
+      </div>
+      <canvas *ngIf="!carregandoGraficos" baseChart [data]="chartDataPorPilar" [options]="chartOptionsPorPilar" type="line"></canvas>
+    </div>
+
+    <!-- Segunda chance de voltar/trocar de pilar sem precisar rolar até o topo — a visão de
+         pilar ficou longa. -->
+    <div class="pilar-nav-rodape">
+      <ng-container *ngTemplateOutlet="navPilares"></ng-container>
+      <button class="btn-voltar-pilar btn-voltar-pilar--rodape" (click)="mudarVisao('geral')">← Voltar pra visão geral</button>
+    </div>
+  </ng-template>
+
+  <!-- ══════════════════════════ Visão GERAL (dashboard) ══════════════════════════ -->
+  <ng-container *ngIf="visaoPagina === 'geral'">
+    <ng-container *ngTemplateOutlet="blocoSaude"></ng-container>
+
+    <div class="resumo-bar" *ngIf="investimentos.length">
+      <div class="resumo-bar__item">
+        <span class="resumo-bar__label">Investido</span>
+        <span class="resumo-bar__valor">{{ formatMoeda(valorInvestidoTotal) }}</span>
+      </div>
+      <div class="resumo-bar__item">
+        <span class="resumo-bar__label">Valor atual</span>
+        <span class="resumo-bar__valor">{{ formatMoeda(valorAtualTotal) }}</span>
+      </div>
+      <div class="resumo-bar__item">
+        <span class="resumo-bar__label">Ganho</span>
+        <span class="resumo-bar__valor" [ngClass]="classeGanho(ganhoTotal)">{{ formatMoeda(ganhoTotal) }}</span>
+      </div>
+
+      <div class="resumo-bar__mes">
+        <label>Competência</label>
+        <select [(ngModel)]="anoMesSelecionado" (ngModelChange)="onMesChange()" [disabled]="!meses.length">
+          <option *ngIf="!meses.length" value="">Sem dados</option>
+          <option *ngFor="let m of meses" [value]="m">{{ formatMes(m) }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="estado-vazio" *ngIf="!carregando && !investimentos.length">
+      <div class="estado-vazio__icon">💼</div>
+      <h3>Nenhum investimento cadastrado</h3>
+      <p>Clique numa das visões (Ações, FIIs ou Renda Fixa) depois de ter alguma posição pra começar — ou cadastre a primeira na visão de Ações.</p>
+      <button class="btn-primario" (click)="mudarVisao('acoes')">Cadastrar primeira posição</button>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoGraficoDiversificacao"></ng-container>
+
+    <!-- ── Quanto falta diversificar (macro vs alvo configurado) ──────────────────── -->
+    <div class="balanceamento-card" *ngIf="resumoDiversificacao">
+      <div class="balanceamento-card__header">
+        <h2 class="balanceamento-card__titulo">Diversificação vs. alvo</h2>
+        <span
+          class="diversificacao-score-badge"
+          [class.diversificacao-score-badge--ok]="resumoDiversificacao.percentualDiversificado >= 95"
+          [class.diversificacao-score-badge--atencao]="resumoDiversificacao.percentualDiversificado >= 85 && resumoDiversificacao.percentualDiversificado < 95"
+          [class.diversificacao-score-badge--alerta]="resumoDiversificacao.percentualDiversificado < 85"
+        >
+          {{ resumoDiversificacao.percentualDiversificado.toFixed(1) }}% diversificado
+        </span>
+      </div>
+      <p class="balanceamento-card__aviso" *ngIf="resumoDiversificacao.percentualFaltante > 0.5">
+        Faltam {{ resumoDiversificacao.percentualFaltante.toFixed(1) }}% do valor da carteira migrando entre Ações, FIIs e
+        Renda Fixa pra bater o alvo configurado em <a routerLink="/account/settings">Configurações</a>.
+      </p>
+      <p class="balanceamento-card__aviso" *ngIf="resumoDiversificacao.percentualFaltante <= 0.5">
+        Carteira alinhada ao alvo macro configurado em <a routerLink="/account/settings">Configurações</a>.
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoResumoDiversificacao">
+        <div class="spinner-lg"></div>
+        <span>Calculando...</span>
+      </div>
+
+      <div class="balanceamento-table-wrap" *ngIf="!carregandoResumoDiversificacao">
+        <table class="balanceamento-table">
+          <thead>
+            <tr>
+              <th class="col-setor">Classe</th>
+              <th class="col-num">Valor atual</th>
+              <th class="col-num">% atual</th>
+              <th class="col-num">% alvo</th>
+              <th class="col-num">Diferença</th>
+              <th class="col-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of resumoDiversificacao.macro">
+              <td class="col-setor">{{ m.chave }}</td>
+              <td class="col-num">{{ formatMoeda(m.valorAtual) }}</td>
+              <td class="col-num">{{ m.percentualAtual.toFixed(1) }}%</td>
+              <td class="col-num">{{ m.percentualAlvo.toFixed(1) }}%</td>
+              <td class="col-num">{{ m.diferenca >= 0 ? '+' : '' }}{{ m.diferenca.toFixed(1) }} pp</td>
+              <td class="col-status">
+                <span class="status-badge" [ngClass]="statusSetorClasse(m.status)">{{ statusSetorLabel(m.status) }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="historico-card" *ngIf="historico.length">
+      <h2 class="historico-card__titulo">Evolução da carteira</h2>
+      <div class="estado-loading" *ngIf="carregandoGraficos">
+        <div class="spinner-lg"></div>
+        <span>Carregando gráfico...</span>
+      </div>
+      <canvas *ngIf="!carregandoGraficos" baseChart [data]="chartDataGeral" [options]="chartOptionsGeral" type="line"></canvas>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════ Visão AÇÕES ══════════════════════════ -->
+  <ng-container *ngIf="visaoPagina === 'acoes'">
+    <ng-container *ngTemplateOutlet="blocoSaude"></ng-container>
+
+    <!-- ── Ações por setor (doughnut único: fatia = % atual, cor = status do balanceamento) ──── -->
+    <div class="diversificacao-card" *ngIf="balanceamentoVisivel.length">
+      <h2 class="diversificacao-card__titulo">Ações por setor</h2>
+      <p class="diversificacao-card__dica">
+        Tamanho da fatia = % atual; cor = status do balanceamento (<span class="legenda-status legenda-status--sobrealocado">vermelho sobrealocado</span>,
+        <span class="legenda-status legenda-status--subalocado">azul subalocado</span>,
+        <span class="legenda-status legenda-status--equilibrado">verde equilibrado</span>). % alvo disponível ao passar o mouse.
+      </p>
+      <div class="estado-loading" *ngIf="carregandoGraficos">
+        <div class="spinner-lg"></div>
+        <span>Carregando gráfico...</span>
+      </div>
+      <div class="diversificacao-card__chart" *ngIf="!carregandoGraficos">
+        <canvas baseChart [data]="chartDataSetorStatus" [options]="chartOptionsSetorStatus" type="doughnut"></canvas>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoFormulario"></ng-container>
+
+    <!-- ── Balanceamento por setor ──────────────────────────────────────────── -->
+    <div class="balanceamento-card" *ngIf="!carregando && balanceamentoVisivel.length">
+      <h2 class="balanceamento-card__titulo">Balanceamento por setor</h2>
+      <p class="balanceamento-card__aviso">
+        Compara o que cada setor representa hoje contra o alvo configurado em
+        <a routerLink="/account/settings">Configurações</a>. Mais desbalanceado primeiro.
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoBalanceamento">
+        <div class="spinner-lg"></div>
+        <span>Calculando balanceamento...</span>
+      </div>
+
+      <div class="balanceamento-table-wrap" *ngIf="!carregandoBalanceamento">
+        <table class="balanceamento-table">
+          <thead>
+            <tr>
+              <th class="col-setor">Setor</th>
+              <th class="col-num">Valor atual</th>
+              <th class="col-num">% atual</th>
+              <th class="col-num">% alvo</th>
+              <th class="col-num">Diferença</th>
+              <th class="col-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of balanceamentoVisivel">
+              <td class="col-setor">
+                {{ b.setor }}
+                <span class="setor-descoberto-badge" *ngIf="b.semNenhumaAcao" title="Nenhuma ação sua nesse setor hoje">sem ação</span>
+              </td>
+              <td class="col-num">{{ formatMoeda(b.valorAtual) }}</td>
+              <td class="col-num">{{ b.percentualAtual.toFixed(1) }}%</td>
+              <td class="col-num">{{ b.percentualAlvo.toFixed(1) }}%</td>
+              <td class="col-num">{{ b.diferenca >= 0 ? '+' : '' }}{{ b.diferenca.toFixed(1) }} pp</td>
+              <td class="col-status">
+                <span class="status-badge" [ngClass]="statusSetorClasse(b.status)">{{ statusSetorLabel(b.status) }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoTabela"></ng-container>
+
+    <!-- ── Ranking das ações da carteira + recomendações ──────────────────────── -->
+    <div class="ranking-carteira-card" *ngIf="!carregando && acoesInvestidas.length">
+      <h2 class="ranking-carteira-card__titulo">Ranking das suas ações</h2>
+      <p class="ranking-carteira-card__aviso">
+        Score do mês selecionado pra cada ação da carteira. Sugestões de troca comparam com o resto do setor;
+        sugestões de rebalanceamento comparam a alocação real do setor contra o alvo configurado em
+        <a routerLink="/carteira">Carteira</a>.
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoRecomendacoes">
+        <div class="spinner-lg"></div>
+        <span>Calculando recomendações...</span>
+      </div>
+
+      <div class="ranking-carteira-table-wrap" *ngIf="!carregandoRecomendacoes">
+        <table class="ranking-carteira-table">
+          <thead>
+            <tr>
+              <th class="col-ticker">Ticker</th>
+              <th class="col-nome">Nome</th>
+              <th class="col-setor">Setor</th>
+              <th class="col-num">Final</th>
+              <th class="col-num">Qualidade</th>
+              <th class="col-num">Risco</th>
+              <th class="col-num">Preço</th>
+              <th class="col-prioridade">Prioridade</th>
+              <th class="col-recomendacao">Recomendação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let inv of acoesInvestidas">
+              <td class="col-ticker"><span class="ticker-badge">{{ inv.ticker }}</span></td>
+              <td class="col-nome">{{ inv.nome }}</td>
+              <td class="col-setor">{{ recomendacaoDe(inv.id)?.setor ?? '—' }}</td>
+              <td class="col-num">
+                <span class="score-badge" [ngClass]="scoreClass(recomendacaoDe(inv.id)?.scoreFinal ?? null)">
+                  {{ formatScore(recomendacaoDe(inv.id)?.scoreFinal ?? null) }}
+                </span>
+              </td>
+              <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scoreQualidade ?? null) }}</td>
+              <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scoreRisco ?? null) }}</td>
+              <td class="col-num">{{ formatScore(recomendacaoDe(inv.id)?.scorePreco ?? null) }}</td>
+              <td class="col-prioridade">
+                <span class="prioridade-badge" [ngClass]="prioridadeClasse(recomendacaoDe(inv.id)?.prioridade ?? null)">
+                  {{ prioridadeLabel(recomendacaoDe(inv.id)?.prioridade ?? null) }}
+                </span>
+              </td>
+              <td class="col-recomendacao" *ngIf="recomendacaoDe(inv.id) as rec">
+                <span class="recomendacao-vazia" *ngIf="rec.categoriaAcao === 'manter'">—</span>
+
+                <div class="recomendacao-pill" [ngClass]="categoriaClasse(rec.categoriaAcao)" *ngIf="rec.categoriaAcao !== 'manter'" [title]="rec.motivoTroca ?? ''">
+                  <span class="recomendacao-pill__tag">{{ categoriaLabel(rec.categoriaAcao) }}</span>
+                  <span class="recomendacao-pill__texto">
+                    {{ textoRecomendacao(rec) }}
+                    <span class="recomendacao-pill__delta" *ngIf="rec.deltaScoreTroca !== null">{{ deltaScoreLabel(rec.deltaScoreTroca) }}</span>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoEvolucaoPilar"></ng-container>
+  </ng-container>
+
+  <!-- ══════════════════════════ Visão FIIs ══════════════════════════ -->
+  <ng-container *ngIf="visaoPagina === 'fii'">
+    <!-- ── Saúde da carteira (FIIs) ─────────────────────────────────────────── -->
+    <div class="saude-card" *ngIf="!carregando && saudeFii">
+      <h2 class="saude-card__titulo">Saúde da carteira (FIIs)</h2>
+      <p class="saude-card__aviso">
+        Valuation, Renda, Liquidez/Porte e Preservação médios, ponderados pelo valor de cada FII —
+        mesmos 4 pilares do <a routerLink="/ranking">Ranking de FIIs</a>.
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoSaudeFii">
+        <div class="spinner-lg"></div>
+        <span>Calculando saúde da carteira...</span>
+      </div>
+
+      <div class="saude-grid" *ngIf="!carregandoSaudeFii">
+        <div class="saude-item">
+          <span class="saude-item__label">Valuation</span>
+          <span class="score-badge" [ngClass]="scoreClass(saudeFii.scoreValuationMedio)">{{ formatScore(saudeFii.scoreValuationMedio) }}</span>
+        </div>
+        <div class="saude-item">
+          <span class="saude-item__label">Renda</span>
+          <span class="score-badge" [ngClass]="scoreClass(saudeFii.scoreRendaMedio)">{{ formatScore(saudeFii.scoreRendaMedio) }}</span>
+        </div>
+        <div class="saude-item">
+          <span class="saude-item__label">Liquidez/Porte</span>
+          <span class="score-badge" [ngClass]="scoreClass(saudeFii.scoreLiquidezPorteMedio)">{{ formatScore(saudeFii.scoreLiquidezPorteMedio) }}</span>
+        </div>
+        <div class="saude-item">
+          <span class="saude-item__label">Preservação</span>
+          <span class="score-badge" [ngClass]="scoreClass(saudeFii.scorePreservacaoMedio)">{{ formatScore(saudeFii.scorePreservacaoMedio) }}</span>
+        </div>
+        <div class="saude-item saude-item--final">
+          <span class="saude-item__label">Final</span>
+          <span class="score-badge" [ngClass]="scoreClass(saudeFii.scoreFinalMedio)">{{ formatScore(saudeFii.scoreFinalMedio) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoGraficoDiversificacao"></ng-container>
+    <ng-container *ngTemplateOutlet="blocoFormulario"></ng-container>
+
+    <!-- ── Balanceamento de FIIs por segmento ──────────────────────────────────── -->
+    <div class="balanceamento-card" *ngIf="!carregando && balanceamentoFiiVisivel.length">
+      <h2 class="balanceamento-card__titulo">Balanceamento de FIIs por segmento</h2>
+      <p class="balanceamento-card__aviso">
+        Compara o que cada segmento de FII representa hoje contra o alvo configurado em
+        <a routerLink="/account/settings">Configurações</a> (Alocação por Segmento de FII, dentro de FIIs). Mais desbalanceado primeiro.
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoBalanceamentoFii">
+        <div class="spinner-lg"></div>
+        <span>Calculando balanceamento...</span>
+      </div>
+
+      <div class="balanceamento-table-wrap" *ngIf="!carregandoBalanceamentoFii">
+        <table class="balanceamento-table">
+          <thead>
+            <tr>
+              <th class="col-setor">Segmento</th>
+              <th class="col-num">Valor atual</th>
+              <th class="col-num">% atual</th>
+              <th class="col-num">% alvo</th>
+              <th class="col-num">Diferença</th>
+              <th class="col-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of balanceamentoFiiVisivel">
+              <td class="col-setor">
+                {{ b.segmento }}
+                <span class="setor-descoberto-badge" *ngIf="b.semNenhumFii" title="Nenhum FII seu nesse segmento hoje">sem FII</span>
+              </td>
+              <td class="col-num">{{ formatMoeda(b.valorAtual) }}</td>
+              <td class="col-num">{{ b.percentualAtual.toFixed(1) }}%</td>
+              <td class="col-num">{{ b.percentualAlvo.toFixed(1) }}%</td>
+              <td class="col-num">{{ b.diferenca >= 0 ? '+' : '' }}{{ b.diferenca.toFixed(1) }} pp</td>
+              <td class="col-status">
+                <span class="status-badge" [ngClass]="statusSetorClasse(b.status)">{{ statusSetorLabel(b.status) }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Balanceamento de FIIs por setor (tipo de fundo) ─────────────────────── -->
+    <div class="balanceamento-card" *ngIf="!carregando && balanceamentoSetorFiiVisivel.length">
+      <h2 class="balanceamento-card__titulo">Balanceamento de FIIs por setor (tipo de fundo)</h2>
+      <p class="balanceamento-card__aviso">
+        Compara o que cada tipo de fundo (Tijolo/Papel/Misto) representa hoje contra o alvo configurado em
+        <a routerLink="/account/settings">Configurações</a> (Alocação por Setor de FII, dentro de FIIs). Dimensão
+        independente do segmento acima — um FII logístico, por exemplo, é um Fundo de Tijolo.
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoBalanceamentoSetorFii">
+        <div class="spinner-lg"></div>
+        <span>Calculando balanceamento...</span>
+      </div>
+
+      <div class="balanceamento-table-wrap" *ngIf="!carregandoBalanceamentoSetorFii">
+        <table class="balanceamento-table">
+          <thead>
+            <tr>
+              <th class="col-setor">Setor (tipo de fundo)</th>
+              <th class="col-num">Valor atual</th>
+              <th class="col-num">% atual</th>
+              <th class="col-num">% alvo</th>
+              <th class="col-num">Diferença</th>
+              <th class="col-status">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of balanceamentoSetorFiiVisivel">
+              <td class="col-setor">
+                {{ b.setor }}
+                <span class="setor-descoberto-badge" *ngIf="b.semNenhumFii" title="Nenhum FII seu desse tipo hoje">sem FII</span>
+              </td>
+              <td class="col-num">{{ formatMoeda(b.valorAtual) }}</td>
+              <td class="col-num">{{ b.percentualAtual.toFixed(1) }}%</td>
+              <td class="col-num">{{ b.percentualAlvo.toFixed(1) }}%</td>
+              <td class="col-num">{{ b.diferenca >= 0 ? '+' : '' }}{{ b.diferenca.toFixed(1) }} pp</td>
+              <td class="col-status">
+                <span class="status-badge" [ngClass]="statusSetorClasse(b.status)">{{ statusSetorLabel(b.status) }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoTabela"></ng-container>
+
+    <!-- ── Ranking dos seus FIIs + recomendações ───────────────────────────────── -->
+    <div class="ranking-carteira-card" *ngIf="!carregando && recomendacoesFii.length">
+      <h2 class="ranking-carteira-card__titulo">Ranking dos seus FIIs</h2>
+      <p class="ranking-carteira-card__aviso">
+        Score do mês selecionado pra cada FII da carteira, mesmo motor do <a routerLink="/ranking">Ranking de FIIs</a>.
+        Sugestões de rebalanceamento comparam a alocação real do segmento contra o alvo configurado em
+        <a routerLink="/account/settings">Configurações</a> (Alocação por Segmento de FII).
+      </p>
+
+      <div class="estado-loading" *ngIf="carregandoRecomendacoesFii">
+        <div class="spinner-lg"></div>
+        <span>Calculando recomendações...</span>
+      </div>
+
+      <div class="ranking-carteira-table-wrap" *ngIf="!carregandoRecomendacoesFii">
+        <table class="ranking-carteira-table">
+          <thead>
+            <tr>
+              <th class="col-ticker">Ticker</th>
+              <th class="col-nome">Nome</th>
+              <th class="col-setor">Segmento</th>
+              <th class="col-num">Final</th>
+              <th class="col-num">Valuation</th>
+              <th class="col-num">Renda</th>
+              <th class="col-num">Liq./Porte</th>
+              <th class="col-num">Preservação</th>
+              <th class="col-prioridade">Prioridade</th>
+              <th class="col-recomendacao">Recomendação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of recomendacoesFii">
+              <td class="col-ticker">
+                <span class="ticker-badge">{{ r.ticker }}</span>
+                <span class="alerta-risco-fii" *ngIf="r.alertaRisco" [title]="descricaoAlertaRisco(r.alertaRisco)">⚠</span>
+              </td>
+              <td class="col-nome">{{ r.nome }}</td>
+              <td class="col-setor">{{ r.segmento ?? '—' }}</td>
+              <td class="col-num">
+                <span class="score-badge" [ngClass]="scoreClass(r.scoreFinal)">{{ formatScore(r.scoreFinal) }}</span>
+              </td>
+              <td class="col-num">{{ formatScore(r.scoreValuation) }}</td>
+              <td class="col-num">{{ formatScore(r.scoreRenda) }}</td>
+              <td class="col-num">{{ formatScore(r.scoreLiquidezPorte) }}</td>
+              <td class="col-num">{{ formatScore(r.scorePreservacao) }}</td>
+              <td class="col-prioridade">
+                <span class="prioridade-badge" [ngClass]="prioridadeClasse(r.prioridade)">{{ prioridadeLabel(r.prioridade) }}</span>
+              </td>
+              <td class="col-recomendacao">
+                <span class="recomendacao-vazia" *ngIf="r.categoriaAcao === 'manter'">—</span>
+
+                <div class="recomendacao-pill" [ngClass]="categoriaClasse(r.categoriaAcao)" *ngIf="r.categoriaAcao !== 'manter'" [title]="r.motivoTroca ?? ''">
+                  <span class="recomendacao-pill__tag">{{ categoriaLabel(r.categoriaAcao) }}</span>
+                  <span class="recomendacao-pill__texto">
+                    {{ textoRecomendacaoFii(r) }}
+                    <span class="recomendacao-pill__delta" *ngIf="r.deltaScoreTroca !== null">{{ deltaScoreLabel(r.deltaScoreTroca) }}</span>
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoEvolucaoPilar"></ng-container>
+  </ng-container>
+
+  <!-- ══════════════════════════ Visão Renda Fixa ══════════════════════════ -->
+  <ng-container *ngIf="visaoPagina === 'rendaFixa'">
+    <ng-container *ngTemplateOutlet="blocoFormulario"></ng-container>
+    <ng-container *ngTemplateOutlet="blocoTabela"></ng-container>
+
+    <!-- ── Simulador "qual vale mais investir" ─────────────────────────────── -->
+    <div class="simulador-card">
+      <h2 class="simulador-card__titulo">Simulador — qual vale mais investir?</h2>
+      <p class="simulador-card__aviso">
+        Compare 2 ou mais títulos (cenários hipotéticos, não precisam ser posições salvas) e veja qual rende mais líquido de IR.
+        Taxa anual equivalente do CDI é uma referência cadastrada manualmente, não uma cotação em tempo real; o cálculo usa juros
+        compostos simples (base 365 dias) — serve pra comparar, não substitui a simulação do seu banco/corretora.
+      </p>
+
+      <div class="simulador-cenario" *ngFor="let c of simulacaoCenarios; let i = index">
+        <div class="form-grid form-grid--simulador">
+          <div class="campo campo--wide">
+            <label>Nome do cenário</label>
+            <input type="text" [(ngModel)]="c.nome" placeholder="Ex: CDB Banco X" />
+          </div>
+          <div class="campo">
+            <label>Valor investido (R$)</label>
+            <input type="number" [(ngModel)]="c.valorInvestido" min="0" step="0.01" placeholder="0,00" />
+          </div>
+          <div class="campo">
+            <label>Rentabilidade</label>
+            <select [(ngModel)]="c.tipoRentabilidade">
+              <option value="cdi">% do CDI</option>
+              <option value="prefixado">Prefixado (% a.a.)</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>{{ c.tipoRentabilidade === 'cdi' ? '% do CDI' : 'Taxa (% a.a.)' }}</label>
+            <input type="number" [(ngModel)]="c.percentualOuTaxa" min="0" step="0.1" placeholder="Ex: 100" />
+          </div>
+          <div class="campo">
+            <label>Data da aplicação</label>
+            <input type="date" [(ngModel)]="c.dataAplicacao" />
+          </div>
+          <div class="campo">
+            <label>Vencimento</label>
+            <input type="date" [(ngModel)]="c.dataVencimento" />
+          </div>
+          <div class="campo campo--checkbox">
+            <label>
+              <input type="checkbox" [(ngModel)]="c.isentoIr" />
+              Isento de IR (LCI/LCA/CRI/CRA)
+            </label>
+          </div>
+        </div>
+        <button type="button" class="btn-link btn-link--danger" *ngIf="simulacaoCenarios.length > 2" (click)="removerCenarioSimulacao(i)">Remover cenário</button>
+      </div>
+
+      <div class="form-acoes">
+        <button type="button" class="btn-secundario" (click)="adicionarCenarioSimulacao()">+ Adicionar cenário</button>
+        <button type="button" class="btn-primario" [disabled]="!simulacaoValida || simulando" (click)="executarSimulacao()">
+          {{ simulando ? 'Calculando...' : 'Comparar' }}
+        </button>
+      </div>
+      <p class="simulador-card__erro" *ngIf="erroSimulacao">{{ erroSimulacao }}</p>
+
+      <div class="tabela-wrap" *ngIf="simulacaoResultados.length">
+        <table class="tabela-simulador">
+          <thead>
+            <tr>
+              <th>Cenário</th>
+              <th class="col-num">Dias</th>
+              <th class="col-num">Taxa a.a. equiv.</th>
+              <th class="col-num">Bruto</th>
+              <th class="col-num">Alíquota IR</th>
+              <th class="col-num">IR</th>
+              <th class="col-num">Líquido</th>
+              <th class="col-num">Rentab. líquida</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of simulacaoResultados" [class.tabela-simulador__melhor]="r.melhor">
+              <td>{{ r.nome }} <span class="simulador-melhor-badge" *ngIf="r.melhor">melhor</span></td>
+              <td class="col-num">{{ r.dias }}</td>
+              <td class="col-num">{{ r.taxaAnualEquivalente.toFixed(2) }}%</td>
+              <td class="col-num">{{ formatMoeda(r.valorBruto) }}</td>
+              <td class="col-num">{{ (r.aliquotaIr * 100).toFixed(1) }}%</td>
+              <td class="col-num">{{ formatMoeda(r.ir) }}</td>
+              <td class="col-num">{{ formatMoeda(r.valorLiquido) }}</td>
+              <td class="col-num">{{ r.rentabilidadeLiquidaPercentual.toFixed(2) }}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="blocoEvolucaoPilar"></ng-container>
+  </ng-container>
 
 </div>

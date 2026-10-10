@@ -2,14 +2,17 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
+  FiiRankingItem,
   FiltroAvancadoMeta,
   FiltroFixoMeta,
   HistoricoRankingItem,
   IndicadorBruto,
+  IndicadorFiiBruto,
   IngestionFiltro,
   MedianaGrupo,
   RankingItem,
   ResumoColeta,
+  ResumoColetaFii,
   TickerBusca,
   Top3PorGrupo,
 } from '../interfaces/market-data.interfaces';
@@ -51,12 +54,44 @@ export class MarketDataService {
     return this.http.get<ResumoColeta>('/market-data/resumo', { params: { anoMes } });
   }
 
+  // Coleta de FII — endpoints separados dos de ação (ver IngestionFiiService no backend).
+  dispararIngestionFii(): Observable<{ processadas: number; erros: number }> {
+    return this.http.post<{ processadas: number; erros: number }>('/market-data/ingest-fii', {});
+  }
+
+  getMesesFii(): Observable<string[]> {
+    return this.http.get<string[]>('/market-data/meses-fii');
+  }
+
+  getIndicadoresFii(anoMes: string): Observable<IndicadorFiiBruto[]> {
+    return this.http.get<IndicadorFiiBruto[]>('/market-data/indicadores-fii', { params: { anoMes } });
+  }
+
+  getResumoFii(anoMes: string): Observable<ResumoColetaFii> {
+    return this.http.get<ResumoColetaFii>('/market-data/resumo-fii', { params: { anoMes } });
+  }
+
+  getRankingFii(anoMes: string): Observable<FiiRankingItem[]> {
+    return this.http.get<FiiRankingItem[]>('/market-data/ranking-fii', { params: { anoMes } });
+  }
+
+  /** Catálogo real de segmentos (Fii.segmento) — substitui a lista provisória hardcoded que
+   * existia antes de 2026-10-08 (ver comentário em IngestionFiiService.getSegmentos). */
+  getSegmentosFii(): Observable<string[]> {
+    return this.http.get<string[]>('/market-data/segmentos-fii');
+  }
+
   previewTicker(ticker: string): Observable<unknown> {
     return this.http.get<unknown>(`/market-data/preview/${ticker}`);
   }
 
   buscarTickers(q: string): Observable<TickerBusca[]> {
     return this.http.get<TickerBusca[]>('/market-data/tickers', { params: { q } });
+  }
+
+  // Endpoint separado de buscarTickers (ações) — ver BrapiService.buscarTickersFii no backend.
+  buscarTickersFii(q: string): Observable<TickerBusca[]> {
+    return this.http.get<TickerBusca[]>('/market-data/tickers-fii', { params: { q } });
   }
 
   getMedianas(tipoGrupo: string, anoMes: string): Observable<MedianaGrupo[]> {

@@ -13,6 +13,37 @@ $muted:    #6b7280;
   min-height: calc(100vh - 80px);
 }
 
+// ── Abas (Ações / FIIs) — pipelines separados, ver ranking.component.ts ───────────
+
+.ranking-abas {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ranking-aba-btn {
+  background: #f3f4f6;
+  color: $muted;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &--ativa {
+    background: $primary;
+    color: #fff;
+    border-color: $primary;
+  }
+}
+
+.ranking-fii-aviso {
+  font-size: 0.8125rem;
+  color: $muted;
+  margin: 0 0 1rem;
+}
+
 // ── Header ────────────────────────────────────────────────────────────────────
 
 .ranking-header {
@@ -419,6 +450,11 @@ thead .col-fixed { background: #f8fafc; }
   font-weight: 700;
   font-family: monospace;
   letter-spacing: 0.05em;
+}
+
+.alerta-risco-fii {
+  margin-left: 0.3rem;
+  cursor: help;
 }
 
 .fallback-badge {
