@@ -464,7 +464,9 @@
       <p class="ranking-carteira-card__aviso">
         Score do mês selecionado pra cada ação da carteira. Sugestões de troca comparam com o resto do setor;
         sugestões de rebalanceamento comparam a alocação real do setor contra o alvo configurado em
-        <a routerLink="/carteira">Carteira</a>.
+        <a routerLink="/carteira">Carteira</a>. O valor sugerido de compra também considera o painel
+        "Diversificação vs. alvo" da visão geral — fica maior quando Ações como um todo também está
+        subalocada, não só o setor.
       </p>
 
       <div class="estado-loading" *ngIf="carregandoRecomendacoes">
@@ -664,7 +666,9 @@
       <p class="ranking-carteira-card__aviso">
         Score do mês selecionado pra cada FII da carteira, mesmo motor do <a routerLink="/ranking">Ranking de FIIs</a>.
         Sugestões de rebalanceamento comparam a alocação real do segmento contra o alvo configurado em
-        <a routerLink="/account/settings">Configurações</a> (Alocação por Segmento de FII).
+        <a routerLink="/account/settings">Configurações</a> (Alocação por Segmento de FII). O valor sugerido
+        também considera o painel "Diversificação vs. alvo" da visão geral — fica maior quando FIIs como um
+        todo também está subalocado, não só o segmento.
       </p>
 
       <div class="estado-loading" *ngIf="carregandoRecomendacoesFii">

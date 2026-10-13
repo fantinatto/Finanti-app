@@ -336,8 +336,12 @@ export abstract class CarteiraBaseComponent implements OnInit, OnDestroy {
     if (r.sugestaoTroca) {
       // troca_sugerida é sempre migração de 100% da posição — sem valor parcial associado, mesmo
       // quando o setor ainda está subalocado (ver motivoTroca pro aviso de que o déficit continua).
+      // Quando o setor TAMBÉM está subalocado, valorSugerido carrega o rateio de aporte (já
+      // incluindo o alvo macro, ver valorBaseRateioAcoes no backend) — mostra como complemento,
+      // já que a troca em si não fecha esse déficit.
       const alvo = `${r.sugestaoTroca.ticker} (${this.formatScore(r.sugestaoTroca.scoreFinal)})`;
-      return `Migrar para ${alvo}`;
+      const aporte = r.sugestaoRebalanceamento === 'comprar' && valor != null ? ` · depois, aportar ~${valor}${qtd}` : '';
+      return `Migrar para ${alvo}${aporte}`;
     }
 
     if (r.sugestaoRebalanceamento === 'comprar') return `Comprar ${valor}${qtd}`;

@@ -206,8 +206,11 @@ export class InvestimentosComponent extends CarteiraBaseComponent {
     const qtd = r.quantidadeSugerida != null ? ` (${r.quantidadeSugerida})` : '';
 
     if (r.sugestaoTroca) {
+      // Mesmo tratamento de "Depois, aportar" de textoRecomendacao (ações) — valorSugerido aqui
+      // já considera o alvo macro de FIIs (ver valorBaseRateioFiis no backend).
       const alvo = `${r.sugestaoTroca.ticker} (${this.formatScore(r.sugestaoTroca.scoreFinal)})`;
-      return `Migrar para ${alvo}`;
+      const aporte = r.sugestaoRebalanceamento === 'comprar' && valor != null ? ` · depois, aportar ~${valor}${qtd}` : '';
+      return `Migrar para ${alvo}${aporte}`;
     }
 
     if (r.sugestaoRebalanceamento === 'comprar') return `Comprar ${valor}${qtd}`;
