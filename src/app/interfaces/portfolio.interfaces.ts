@@ -23,10 +23,9 @@ export interface PortfolioConfig {
   /** false = recomendações e execuções na Simulação só operam em múltiplos de 100 ações (lote-padrão B3). */
   permiteFracionario: boolean;
   alocacoesSetor: { id: string; setor: string; percentual: number }[];
+  /** "Setor" de FII (tipo de fundo) não é mais configurado aqui — descontinuado em 2026-10-15,
+   * agora é sempre derivado da soma dos segmentos (ver getBalanceamentoPorSetorFii no backend). */
   alocacoesSegmentoFii: { id: string; segmento: string; percentual: number }[];
-  /** "Setor" de FII = tipo de fundo (Fundo de Tijolo/Papel/Misto) — dimensão independente do
-   * segmento de atuação (ver AlocacaoSetorFii no backend). */
-  alocacoesSetorFii: { id: string; setor: string; percentual: number }[];
 }
 
 export interface UpsertPortfolioConfigPayload {
@@ -40,7 +39,6 @@ export interface UpsertPortfolioConfigPayload {
   permiteFracionario?: boolean;
   alocacoesSetor: AlocacaoItem[];
   alocacoesSegmentoFii: AlocacaoItem[];
-  alocacoesSetorFii: AlocacaoItem[];
 }
 
 export interface SugestaoRegra {

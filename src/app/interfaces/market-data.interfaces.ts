@@ -175,3 +175,12 @@ export interface FiiRankingItem {
    * o motivo. */
   alertaRisco: string | null;
 }
+
+/** Catálogo de segmentos de FII pra configuração de Carteira — já vem com o setor (tipo de
+ * fundo) de cada um, resolvido no backend via Fii.tipoFundo (mapeamento 1:1 real, não um
+ * dicionário fixo) — ver IngestionFiiService.getSegmentos. Setor deixou de ser configurado
+ * independente em 2026-10-15: agora é sempre derivado da soma dos segmentos. */
+export interface SegmentoFiiCatalogo {
+  segmento: string;
+  setor: string;
+}

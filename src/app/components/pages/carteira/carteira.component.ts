@@ -4,6 +4,7 @@ import { PortfolioService } from '../../../services/portfolio.service';
 import { UserService } from '../../../services/user.service';
 import { MarketDataService } from '../../../services/market-data.service';
 import { AlocacaoItem, PortfolioConfig, RegraSelecionada, TipoRankingRecomendacao } from '../../../interfaces/portfolio.interfaces';
+import { SegmentoFiiCatalogo } from '../../../interfaces/market-data.interfaces';
 
 const OPCOES_RANKING_RECOMENDACAO: { valor: TipoRankingRecomendacao; label: string; descricao: string }[] = [
   { valor: 'setor', label: 'Setor', descricao: 'Compara a ação com outras do mesmo setor.' },
@@ -12,10 +13,12 @@ const OPCOES_RANKING_RECOMENDACAO: { valor: TipoRankingRecomendacao; label: stri
   { valor: 'hibrido', label: 'Híbrido', descricao: 'Combina Setor (60%) + Segmento (30%) + Geral (10%) numa nota só.' },
 ];
 
-/// "Setor" de FII = tipo de fundo — taxonomia real e estável da Status Invest (ver
-/// IngestionFiiService), diferente do segmento acima (ainda provisório): só 3 valores válidos
-/// confirmados contra dados reais em 2026-10-08, não precisa de busca dinâmica.
-const TIPOS_FUNDO_FII = ['Fundo de Tijolo', 'Fundo de Papel', 'Fundo Misto'];
+/// "Setor" de FII = tipo de fundo — taxonomia real e estável da Status Invest. Descontinuado
+/// como configuração independente em 2026-10-15 (gerava inconsistência: segmento somava 100% e
+/// setor podia somar um valor diferente, sem amarra nenhuma entre os dois) — agora é só a ORDEM
+/// de exibição dos grupos na tela, o valor em si é sempre derivado da soma dos segmentos
+/// (ver segmentosDoSetor/somaPorSetor), nunca digitado.
+const ORDEM_SETORES_FII = ['Fundo de Tijolo', 'Fundo de Papel', 'Fundo Misto'];
 
 const BASES_PADRAO = [80, 100, 110, 120] as const;
 
@@ -26,13 +29,14 @@ const BASES_PADRAO = [80, 100, 110, 120] as const;
 })
 export class CarteiraComponent implements OnInit {
   readonly basesPadrao = BASES_PADRAO;
-  readonly tiposFundoFii = TIPOS_FUNDO_FII;
+  readonly ordemSetoresFii = ORDEM_SETORES_FII;
 
-  /** Catálogo real de segmentos (Fii.segmento, ver IngestionFiiService.getSegmentos) — era lista
-   * provisória hardcoded até 2026-10-08, trocada depois de confirmar que os nomes não batiam com
-   * os reais (ex: "Logística" vs o real "Imóveis Industriais e Logísticos"), fazendo o
-   * balanceamento mostrar alvo 100% subalocado mesmo com posição real no segmento. */
-  segmentosFii: string[] = [];
+  /** Catálogo real de segmentos (Fii.segmento, ver IngestionFiiService.getSegmentos) — já vem
+   * com o setor de cada um (derivado de Fii.tipoFundo), usado só pra agrupar a tela por setor
+   * (ver segmentosDoSetor). Exclui segmentos com tipoFundo fora de Tijolo/Papel/Misto (vazamento
+   * de classificação de setor de ação, mesmo filtro do ranking). */
+  segmentosFii: SegmentoFiiCatalogo[] = [];
+  private segmentoParaSetor = new Map<string, string>();
   readonly opcoesRankingRecomendacao = OPCOES_RANKING_RECOMENDACAO;
 
   carregando = false;
@@ -60,7 +64,6 @@ export class CarteiraComponent implements OnInit {
 
   alocacoesSetor: AlocacaoItem[] = [];
   alocacoesSegmentoFii: AlocacaoItem[] = [];
-  alocacoesSetorFii: AlocacaoItem[] = TIPOS_FUNDO_FII.map((nome) => ({ nome, percentual: 0 }));
 
   constructor(
     private portfolioService: PortfolioService,
@@ -96,9 +99,10 @@ export class CarteiraComponent implements OnInit {
         }
 
         this.segmentosFii = segmentosFii;
-        this.alocacoesSegmentoFii = segmentosFii.map((nome) => {
-          const existente = config?.alocacoesSegmentoFii.find((a) => a.segmento === nome);
-          return { nome, percentual: existente?.percentual ?? 0 };
+        this.segmentoParaSetor = new Map(segmentosFii.map((s) => [s.segmento, s.setor]));
+        this.alocacoesSegmentoFii = segmentosFii.map(({ segmento }) => {
+          const existente = config?.alocacoesSegmentoFii.find((a) => a.segmento === segmento);
+          return { nome: segmento, percentual: existente?.percentual ?? 0 };
         });
 
         if (config) this.aplicarConfigCarregada(config);
@@ -118,11 +122,6 @@ export class CarteiraComponent implements OnInit {
     this.ajustarPorJuros = config.regraSelecionada === 'base_di';
     this.tipoRankingRecomendacao = config.tipoRankingRecomendacao ?? 'setor';
     this.permiteFracionario = config.permiteFracionario ?? true;
-
-    this.alocacoesSetorFii = TIPOS_FUNDO_FII.map((nome) => {
-      const existente = config.alocacoesSetorFii.find((a) => a.setor === nome);
-      return { nome, percentual: existente?.percentual ?? 0 };
-    });
   }
 
   private calcularIdade(birthDateIso: string): number {
@@ -192,8 +191,17 @@ export class CarteiraComponent implements OnInit {
     return this.alocacoesSegmentoFii.reduce((acc, a) => acc + (a.percentual || 0), 0);
   }
 
-  get somaAlocacoesSetorFii(): number {
-    return this.alocacoesSetorFii.reduce((acc, a) => acc + (a.percentual || 0), 0);
+  /** Segmentos cujo setor (derivado de Fii.tipoFundo) é o informado — usado pra agrupar a
+   * tela, já que alocacoesSegmentoFii não carrega o setor (só nome/percentual). */
+  segmentosDoSetor(setor: string): AlocacaoItem[] {
+    return this.alocacoesSegmentoFii.filter((a) => this.segmentoParaSetor.get(a.nome) === setor);
+  }
+
+  /** Alvo do setor — nunca digitado, sempre a soma dos segmentos do grupo (ver decisão de
+   * 2026-10-15: elimina a inconsistência entre "Alocação por Segmento" e "Alocação por Setor"
+   * que existiam como duas listas independentes). */
+  somaPorSetor(setor: string): number {
+    return this.segmentosDoSetor(setor).reduce((acc, a) => acc + (a.percentual || 0), 0);
   }
 
   salvar(): void {
@@ -212,7 +220,6 @@ export class CarteiraComponent implements OnInit {
       permiteFracionario: this.permiteFracionario,
       alocacoesSetor: this.alocacoesSetor,
       alocacoesSegmentoFii: this.alocacoesSegmentoFii,
-      alocacoesSetorFii: this.alocacoesSetorFii,
     }).subscribe({
       next: () => {
         this.salvando = false;

@@ -13,6 +13,7 @@ import {
   RankingItem,
   ResumoColeta,
   ResumoColetaFii,
+  SegmentoFiiCatalogo,
   TickerBusca,
   Top3PorGrupo,
 } from '../interfaces/market-data.interfaces';
@@ -77,8 +78,8 @@ export class MarketDataService {
 
   /** Catálogo real de segmentos (Fii.segmento) — substitui a lista provisória hardcoded que
    * existia antes de 2026-10-08 (ver comentário em IngestionFiiService.getSegmentos). */
-  getSegmentosFii(): Observable<string[]> {
-    return this.http.get<string[]>('/market-data/segmentos-fii');
+  getSegmentosFii(): Observable<SegmentoFiiCatalogo[]> {
+    return this.http.get<SegmentoFiiCatalogo[]>('/market-data/segmentos-fii');
   }
 
   previewTicker(ticker: string): Observable<unknown> {

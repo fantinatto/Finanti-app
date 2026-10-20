@@ -180,6 +180,39 @@ $muted:   #6b7280;
     font-size: 0.85rem;
     text-align: right;
   }
+
+  &--indentada {
+    padding-left: 1rem;
+    border-left: 2px solid $border;
+    margin-left: 0.15rem;
+  }
+}
+
+.grupo-setor-fii {
+  margin-bottom: 0.75rem;
+
+  &__titulo {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: $primary;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0.9rem 0 0.3rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid $border;
+  }
+
+  &__derivado {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: none;
+    letter-spacing: normal;
+  }
 }
 
 .alocacao-nome {

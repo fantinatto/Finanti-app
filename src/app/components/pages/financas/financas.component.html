@@ -14,149 +14,326 @@
   <div class="loading-box" *ngIf="carregando">Carregando...</div>
 
   <ng-container *ngIf="!carregando && mes">
-    <div class="aviso-replicado" *ngIf="mes.replicadoDe">
-      Itens replicados de {{ formatMesLabel(mes.replicadoDe) }} — revise os valores e marque o
-      que já foi pago/recebido.
+    <!-- Status de fechamento do mês — sempre visível, independe da aba -->
+    <div class="fechamento-bar" [class.fechamento-bar--fechado]="mes.fechadoEm">
+      <span class="fechamento-bar__icone">{{ mes.fechadoEm ? '✓' : '📌' }}</span>
+      <div class="fechamento-bar__texto">
+        <strong>{{ mes.fechadoEm ? 'Mês fechado' : 'Mês em aberto' }}</strong>
+        <span *ngIf="mes.fechadoEm">Fechado em {{ formatData(mes.fechadoEm) }} — reabrir não apaga nada, é só desfazer o selo.</span>
+        <span *ngIf="!mes.fechadoEm">Revise os lançamentos e feche o mês quando terminar de conferir.</span>
+      </div>
+      <button type="button" class="btn-fechamento" [disabled]="fechandoMes" (click)="mes.fechadoEm ? reabrirMes() : fecharMes()">
+        {{ fechandoMes ? '...' : (mes.fechadoEm ? 'Reabrir mês' : 'Fechar mês') }}
+      </button>
     </div>
 
-    <div class="resumo-card">
-      <div class="resumo-item">
-        <span class="resumo-item__label">Ganhos</span>
-        <span class="resumo-item__valor resumo-item__valor--ganho">{{ formatMoeda(mes.totalGanhos) }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="resumo-item__label">Gastos</span>
-        <span class="resumo-item__valor resumo-item__valor--gasto">{{ formatMoeda(mes.totalGastos) }}</span>
-      </div>
-      <div class="resumo-item">
-        <span class="resumo-item__label">Saldo</span>
-        <span class="resumo-item__valor" [class.resumo-item__valor--ganho]="mes.saldo >= 0" [class.resumo-item__valor--gasto]="mes.saldo < 0">
-          {{ formatMoeda(mes.saldo) }}
-        </span>
-      </div>
-    </div>
+    <div class="financas-body">
+      <!-- Sidebar de navegação entre seções -->
+      <nav class="financas-sidebar">
+        <button type="button" class="sidebar-icone" [class.sidebar-icone--ativo]="abaAtiva === 'geral'" (click)="setAba('geral')" title="Visão Geral">
+          <span class="sidebar-icone__simbolo">📊</span>
+          <span class="sidebar-icone__label">Visão Geral</span>
+        </button>
+        <button type="button" class="sidebar-icone" [class.sidebar-icone--ativo]="abaAtiva === 'lancamentos'" (click)="setAba('lancamentos')" title="Lançamentos">
+          <span class="sidebar-icone__simbolo">💰</span>
+          <span class="sidebar-icone__label">Lançamentos</span>
+        </button>
+        <button type="button" class="sidebar-icone" [class.sidebar-icone--ativo]="abaAtiva === 'cartao'" (click)="setAba('cartao')" title="Cartão de Crédito">
+          <span class="sidebar-icone__simbolo">💳</span>
+          <span class="sidebar-icone__label">Cartão</span>
+        </button>
+      </nav>
 
-    <!-- Ganhos -->
-    <section class="bloco-card">
-      <h2 class="bloco-card__titulo">Ganhos</h2>
+      <div class="financas-content">
 
-      <form class="form-grid form-grid--ganho" (ngSubmit)="salvarGanho()">
-        <div class="campo campo--wide">
-          <label>Nome</label>
-          <input type="text" [(ngModel)]="formGanho.nome" name="nomeGanho" placeholder="Ex: Salário" required />
-        </div>
-        <div class="campo">
-          <label>Valor</label>
-          <input type="number" step="0.01" min="0" [(ngModel)]="formGanho.valor" name="valorGanho" required />
-        </div>
-        <div class="campo campo--checkbox">
-          <label>
-            <input type="checkbox" [(ngModel)]="formGanho.recebido" name="recebidoGanho" />
-            Recebido
-          </label>
-        </div>
-        <div class="form-acoes">
-          <button type="submit" class="btn-primario">{{ editandoGanhoId ? 'Salvar' : 'Adicionar' }}</button>
-          <button type="button" class="btn-secundario" *ngIf="editandoGanhoId" (click)="cancelarEdicaoGanho()">Cancelar</button>
-        </div>
-      </form>
+        <!-- ══ ABA: VISÃO GERAL ══════════════════════════════════════════ -->
+        <ng-container *ngIf="abaAtiva === 'geral'">
+          <div class="resumo-card">
+            <div class="resumo-item">
+              <span class="resumo-item__icone">💰</span>
+              <span class="resumo-item__label">Ganhos</span>
+              <span class="resumo-item__valor resumo-item__valor--ganho">{{ formatMoeda(mes.totalGanhos) }}</span>
+            </div>
+            <div class="resumo-item">
+              <span class="resumo-item__icone">💸</span>
+              <span class="resumo-item__label">Gastos</span>
+              <span class="resumo-item__valor resumo-item__valor--gasto">{{ formatMoeda(mes.totalGastos) }}</span>
+            </div>
+            <div class="resumo-item">
+              <span class="resumo-item__icone">⚖️</span>
+              <span class="resumo-item__label">Saldo</span>
+              <span class="resumo-item__valor" [class.resumo-item__valor--ganho]="mes.saldo >= 0" [class.resumo-item__valor--gasto]="mes.saldo < 0">
+                {{ formatMoeda(mes.saldo) }}
+              </span>
+            </div>
+          </div>
 
-      <div class="tabela-wrap" *ngIf="mes.ganhos.length">
-        <table class="tabela">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th class="col-num">Valor</th>
-              <th class="col-num">Recebido</th>
-              <th class="col-acoes">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let g of mes.ganhos">
-              <td>{{ g.nome }}</td>
-              <td class="col-num">{{ formatMoeda(g.valor) }}</td>
-              <td class="col-num">
-                <input type="checkbox" [checked]="g.recebido" (change)="toggleRecebido(g)" />
-              </td>
-              <td class="col-acoes">
-                <button type="button" class="btn-link" (click)="iniciarEdicaoGanho(g)">Editar</button>
-                <button type="button" class="btn-link btn-link--danger" (click)="removerGanho(g.id)">Excluir</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="tabela-vazia" *ngIf="!mes.ganhos.length">Nenhum ganho cadastrado neste mês.</p>
-    </section>
+          <h2 class="secao-titulo">Indicadores de Qualidade Financeira</h2>
+          <div class="indicadores-card">
+            <div class="indicador">
+              <span class="indicador__icone">🏦</span>
+              <span class="indicador__label">Taxa de poupança</span>
+              <span class="indicador__valor" [class.indicador--positivo]="(mes.indicadores.taxaPoupanca ?? 0) >= 0" [class.indicador--negativo]="(mes.indicadores.taxaPoupanca ?? 0) < 0">
+                {{ formatPercentual(mes.indicadores.taxaPoupanca) }}
+              </span>
+            </div>
+            <div class="indicador">
+              <span class="indicador__icone">📈</span>
+              <span class="indicador__label">Gastos vs. mês anterior</span>
+              <span class="indicador__valor" [ngClass]="classeVariacaoGastos(mes.indicadores.variacaoGastosMesAnterior)">
+                {{ formatPercentual(mes.indicadores.variacaoGastosMesAnterior) }}
+              </span>
+            </div>
+            <div class="indicador">
+              <span class="indicador__icone">✅</span>
+              <span class="indicador__label">Contas pagas</span>
+              <span class="indicador__valor">{{ formatPercentual(mes.indicadores.percentualContasPagas) }}</span>
+            </div>
+            <div class="indicador">
+              <span class="indicador__icone">💳</span>
+              <span class="indicador__label">Cartão no total de gastos</span>
+              <span class="indicador__valor">{{ formatPercentual(mes.indicadores.participacaoCartaoNoGasto) }}</span>
+            </div>
+          </div>
 
-    <!-- Gastos -->
-    <section class="bloco-card">
-      <h2 class="bloco-card__titulo">Gastos</h2>
+          <div class="graficos-lado-a-lado">
+            <div class="bloco-card bloco-card--grafico" *ngIf="!carregandoHistorico">
+              <h2 class="bloco-card__titulo">Evolução — Ganhos x Gastos</h2>
+              <canvas baseChart *ngIf="historico.length" [data]="chartDataHistorico" [options]="chartOptionsHistorico" type="bar"></canvas>
+              <p class="tabela-vazia" *ngIf="!historico.length">
+                Ainda não há dados suficientes pra montar o gráfico — cadastre gastos/ganhos em pelo menos 2 meses.
+              </p>
+            </div>
 
-      <form class="form-grid form-grid--gasto" (ngSubmit)="salvarGasto()">
-        <div class="campo campo--wide">
-          <label>Nome</label>
-          <input type="text" [(ngModel)]="formGasto.nome" name="nomeGasto" placeholder="Ex: Conta de Luz" required />
-        </div>
-        <div class="campo">
-          <label>Forma de Pagamento</label>
-          <select [(ngModel)]="formGasto.formaPagamento" name="formaPagamento">
-            <option value="">—</option>
-            <option *ngFor="let f of formasPagamento" [value]="f">{{ f }}</option>
-          </select>
-        </div>
-        <div class="campo">
-          <label>Valor</label>
-          <input type="number" step="0.01" min="0" [(ngModel)]="formGasto.valor" name="valorGasto" required />
-        </div>
-        <div class="campo">
-          <label>Vencimento</label>
-          <input type="date" [(ngModel)]="formGasto.dataVencimento" name="dataVencimento" />
-        </div>
-        <div class="campo campo--checkbox">
-          <label>
-            <input type="checkbox" [(ngModel)]="formGasto.pago" name="pagoGasto" />
-            Pago
-          </label>
-        </div>
-        <div class="form-acoes">
-          <button type="submit" class="btn-primario">{{ editandoGastoId ? 'Salvar' : 'Adicionar' }}</button>
-          <button type="button" class="btn-secundario" *ngIf="editandoGastoId" (click)="cancelarEdicaoGasto()">Cancelar</button>
-        </div>
-      </form>
+            <div class="bloco-card bloco-card--grafico">
+              <h2 class="bloco-card__titulo">Maiores categorias de gasto (cartão)</h2>
+              <canvas baseChart *ngIf="resumoCategoria.length" [data]="chartDataCategorias" [options]="chartOptionsCategorias" type="bar"></canvas>
+              <p class="tabela-vazia" *ngIf="!resumoCategoria.length">
+                Importe a fatura do cartão (aba Cartão) pra ver aqui onde o dinheiro foi.
+              </p>
+            </div>
+          </div>
+        </ng-container>
 
-      <div class="tabela-wrap" *ngIf="mes.gastos.length">
-        <table class="tabela">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Forma de Pagamento</th>
-              <th class="col-num">Valor</th>
-              <th class="col-num">%</th>
-              <th class="col-num">Vencimento</th>
-              <th class="col-num">Pago</th>
-              <th class="col-acoes">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let g of mes.gastos">
-              <td>{{ g.nome }}</td>
-              <td>{{ g.formaPagamento ?? '—' }}</td>
-              <td class="col-num">{{ formatMoeda(g.valor) }}</td>
-              <td class="col-num">{{ percentualGasto(g) }}</td>
-              <td class="col-num">{{ formatData(g.dataVencimento) }}</td>
-              <td class="col-num">
-                <input type="checkbox" [checked]="g.pago" (change)="togglePago(g)" />
-              </td>
-              <td class="col-acoes">
-                <button type="button" class="btn-link" (click)="iniciarEdicaoGasto(g)">Editar</button>
-                <button type="button" class="btn-link btn-link--danger" (click)="removerGasto(g.id)">Excluir</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="tabela-vazia" *ngIf="!mes.gastos.length">Nenhum gasto cadastrado neste mês.</p>
-    </section>
+        <!-- ══ ABA: LANÇAMENTOS ══════════════════════════════════════════ -->
+        <ng-container *ngIf="abaAtiva === 'lancamentos'">
+          <div class="aviso-replicado" *ngIf="mes.replicadoDe">
+            Itens replicados de {{ formatMesLabel(mes.replicadoDe) }} — revise os valores e marque o
+            que já foi pago/recebido.
+          </div>
+
+          <!-- Ganhos -->
+          <section class="bloco-card">
+            <h2 class="bloco-card__titulo">Ganhos</h2>
+
+            <form class="form-grid form-grid--ganho" (ngSubmit)="salvarGanho()">
+              <div class="campo campo--wide">
+                <label>Nome</label>
+                <input type="text" [(ngModel)]="formGanho.nome" name="nomeGanho" placeholder="Ex: Salário" required />
+              </div>
+              <div class="campo">
+                <label>Valor</label>
+                <input type="number" step="0.01" min="0" [(ngModel)]="formGanho.valor" name="valorGanho" required />
+              </div>
+              <div class="campo campo--checkbox">
+                <label>
+                  <input type="checkbox" [(ngModel)]="formGanho.recebido" name="recebidoGanho" />
+                  Recebido
+                </label>
+              </div>
+              <div class="form-acoes">
+                <button type="submit" class="btn-primario">{{ editandoGanhoId ? 'Salvar' : 'Adicionar' }}</button>
+                <button type="button" class="btn-secundario" *ngIf="editandoGanhoId" (click)="cancelarEdicaoGanho()">Cancelar</button>
+              </div>
+            </form>
+
+            <div class="tabela-wrap" *ngIf="mes.ganhos.length">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th class="col-num">Valor</th>
+                    <th class="col-num">Recebido</th>
+                    <th class="col-acoes">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let g of mes.ganhos">
+                    <td>{{ g.nome }}</td>
+                    <td class="col-num">{{ formatMoeda(g.valor) }}</td>
+                    <td class="col-num">
+                      <input type="checkbox" [checked]="g.recebido" (change)="toggleRecebido(g)" />
+                    </td>
+                    <td class="col-acoes">
+                      <button type="button" class="btn-link" (click)="iniciarEdicaoGanho(g)">Editar</button>
+                      <button type="button" class="btn-link btn-link--danger" (click)="removerGanho(g.id)">Excluir</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="tabela-vazia" *ngIf="!mes.ganhos.length">Nenhum ganho cadastrado neste mês.</p>
+          </section>
+
+          <!-- Gastos -->
+          <section class="bloco-card">
+            <h2 class="bloco-card__titulo">Gastos</h2>
+
+            <form class="form-grid form-grid--gasto" (ngSubmit)="salvarGasto()">
+              <div class="campo campo--wide">
+                <label>Nome</label>
+                <input type="text" [(ngModel)]="formGasto.nome" name="nomeGasto" placeholder="Ex: Conta de Luz" required />
+              </div>
+              <div class="campo">
+                <label>Forma de Pagamento</label>
+                <select [(ngModel)]="formGasto.formaPagamento" name="formaPagamento">
+                  <option value="">—</option>
+                  <option *ngFor="let f of formasPagamento" [value]="f">{{ f }}</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label>Valor</label>
+                <input type="number" step="0.01" min="0" [(ngModel)]="formGasto.valor" name="valorGasto" required />
+              </div>
+              <div class="campo">
+                <label>Vencimento</label>
+                <input type="date" [(ngModel)]="formGasto.dataVencimento" name="dataVencimento" />
+              </div>
+              <div class="campo campo--checkbox">
+                <label>
+                  <input type="checkbox" [(ngModel)]="formGasto.pago" name="pagoGasto" />
+                  Pago
+                </label>
+              </div>
+              <div class="form-acoes">
+                <button type="submit" class="btn-primario">{{ editandoGastoId ? 'Salvar' : 'Adicionar' }}</button>
+                <button type="button" class="btn-secundario" *ngIf="editandoGastoId" (click)="cancelarEdicaoGasto()">Cancelar</button>
+              </div>
+            </form>
+
+            <div class="tabela-wrap" *ngIf="mes.gastos.length">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Forma de Pagamento</th>
+                    <th class="col-num">Valor</th>
+                    <th class="col-num">%</th>
+                    <th class="col-num">Vencimento</th>
+                    <th class="col-num">Pago</th>
+                    <th class="col-acoes">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let g of mes.gastos">
+                    <td>{{ g.nome }}</td>
+                    <td>{{ g.formaPagamento ?? '—' }}</td>
+                    <td class="col-num">{{ formatMoeda(g.valor) }}</td>
+                    <td class="col-num">{{ percentualGasto(g) }}</td>
+                    <td class="col-num">{{ formatData(g.dataVencimento) }}</td>
+                    <td class="col-num">
+                      <input type="checkbox" [checked]="g.pago" (change)="togglePago(g)" />
+                    </td>
+                    <td class="col-acoes">
+                      <button type="button" class="btn-link" (click)="iniciarEdicaoGasto(g)">Editar</button>
+                      <button type="button" class="btn-link btn-link--danger" (click)="removerGasto(g.id)">Excluir</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="tabela-vazia" *ngIf="!mes.gastos.length">Nenhum gasto cadastrado neste mês.</p>
+          </section>
+        </ng-container>
+
+        <!-- ══ ABA: CARTÃO DE CRÉDITO ════════════════════════════════════ -->
+        <ng-container *ngIf="abaAtiva === 'cartao'">
+          <section class="bloco-card">
+            <h2 class="bloco-card__titulo">Gastos do Cartão de Crédito</h2>
+            <p class="bloco-card__legenda">
+              Importe a fatura em PDF do mês pra ver os gastos itemizados e classificados por
+              categoria — ajuda a identificar onde cortar. Compras parceladas têm as próximas parcelas
+              projetadas automaticamente nos meses seguintes (selo "Previsto"), até a fatura real
+              daquele mês confirmar o valor.
+            </p>
+
+            <div class="import-fatura">
+              <label class="btn-primario btn-upload">
+                {{ importando ? 'Importando...' : 'Importar fatura (PDF)' }}
+                <input type="file" accept="application/pdf" (change)="onArquivoFaturaSelecionado($event)" [disabled]="importando" hidden />
+              </label>
+              <button type="button" class="btn-secundario btn-secundario--pequeno" [disabled]="recalculandoPrevisoes" (click)="recalcularPrevisoesParcelas()">
+                {{ recalculandoPrevisoes ? 'Recalculando...' : 'Recalcular previsões de parcelas' }}
+              </button>
+              <button type="button" class="btn-primario" [disabled]="!temAlteracoesPendentes || salvandoAlteracoes" (click)="salvarTodasAlteracoes()">
+                {{ salvandoAlteracoes ? 'Salvando...' : 'Salvar alterações' + (temAlteracoesPendentes ? ' (' + linhasAlteradas.length + ')' : '') }}
+              </button>
+              <span class="import-fatura__mensagem" *ngIf="mensagemImport">{{ mensagemImport }}</span>
+            </div>
+
+            <div class="aviso-replicado" *ngIf="gastoCartaoDivergente as linha">
+              Soma das transações importadas ({{ formatMoeda(totalTransacoesCartao) }}) diverge do
+              lançamento "{{ linha.nome }}" ({{ formatMoeda(linha.valor) }}).
+              <button type="button" class="btn-link" (click)="sincronizarGastoCartao()">Atualizar lançamento pra {{ formatMoeda(totalTransacoesCartao) }}</button>
+            </div>
+
+            <div class="tabela-wrap" *ngIf="!carregandoTransacoes && transacoesCartao.length">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th class="col-num">Data</th>
+                    <th>Descrição</th>
+                    <th class="col-num">Valor</th>
+                    <th>Categoria</th>
+                    <th class="col-num">Não reconheço</th>
+                    <th class="col-acoes">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let t of transacoesCartao" [class.linha-nao-reconhecida]="t.naoReconhecida" [class.linha-prevista]="t.previsto" [class.linha-alterada]="linhaAlterada(t)">
+                    <td class="col-num">{{ formatData(t.data) }}</td>
+                    <td>
+                      {{ t.descricao }}
+                      <span class="selo-previsto" *ngIf="t.previsto" title="Parcela futura projetada — ainda não confirmada em fatura real">Previsto</span>
+                    </td>
+                    <td class="col-num">{{ formatMoeda(t.valor) }}</td>
+                    <td>
+                      <input
+                        type="text"
+                        list="categorias-cartao"
+                        class="input-categoria"
+                        [(ngModel)]="rascunhoCategoria[t.id]"
+                        [ngModelOptions]="{ standalone: true }"
+                        (keydown.enter)="salvarTodasAlteracoes()"
+                        placeholder="Classificar..."
+                      />
+                    </td>
+                    <td class="col-num">
+                      <label class="chk-nao-reconheco" title="Não reconheço esta compra — marcar pra validar depois">
+                        <input
+                          type="checkbox"
+                          [(ngModel)]="rascunhoNaoReconhecida[t.id]"
+                          [ngModelOptions]="{ standalone: true }"
+                        />
+                      </label>
+                    </td>
+                    <td class="col-acoes">
+                      <button type="button" class="btn-link btn-link--danger" (click)="removerTransacaoCartao(t.id)">Excluir</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <datalist id="categorias-cartao">
+                <option *ngFor="let c of categoriasCartao" [value]="c"></option>
+              </datalist>
+            </div>
+            <p class="tabela-vazia" *ngIf="!carregandoTransacoes && !transacoesCartao.length">
+              Nenhuma transação importada neste mês ainda.
+            </p>
+          </section>
+        </ng-container>
+
+      </div><!-- /financas-content -->
+    </div><!-- /financas-body -->
   </ng-container>
 </div>
