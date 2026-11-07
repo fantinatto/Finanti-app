@@ -3,6 +3,7 @@ import { FiscalService } from '../../../services/fiscal.service';
 import {
   ApuracaoAnual,
   ApuracaoMensalBucket,
+  DarfMensal,
   AssetTypeFiscal,
   BucketFiscal,
   OperacaoFiscal,
@@ -19,6 +20,17 @@ const BUCKET_LABELS: Record<BucketFiscal, string> = {
   fii_fiagro: 'FII / Fiagro',
 };
 
+type AbaFiscal = 'operacoes' | 'darf' | 'apuracao' | 'bens';
+
+const ABAS: { id: AbaFiscal; label: string }[] = [
+  { id: 'operacoes', label: 'Operações' },
+  { id: 'darf', label: 'DARF' },
+  { id: 'apuracao', label: 'Apuração por tipo' },
+  { id: 'bens', label: 'Bens e Direitos' },
+];
+
+const CHAVE_ABA = 'fiscal.abaAtiva';
+
 interface FormOperacao {
   data: string;
   ticker: string;
@@ -28,6 +40,7 @@ interface FormOperacao {
   quantidade: number | null;
   precoUnitario: number | null;
   custos: number | null;
+  irrfRetido: number | null;
 }
 
 function formVazio(): FormOperacao {
@@ -40,6 +53,7 @@ function formVazio(): FormOperacao {
     quantidade: null,
     precoUnitario: null,
     custos: null,
+    irrfRetido: null,
   };
 }
 
@@ -50,6 +64,8 @@ function formVazio(): FormOperacao {
 })
 export class FiscalComponent implements OnInit {
   readonly buckets: BucketFiscal[] = ['comum', 'day_trade', 'fii_fiagro'];
+  readonly abas = ABAS;
+  abaAtiva: AbaFiscal = lerAbaSalva();
 
   anoSelecionado = new Date().getFullYear();
   anosDisponiveis: number[] = [];
@@ -71,6 +87,15 @@ export class FiscalComponent implements OnInit {
     const anoAtual = new Date().getFullYear();
     this.anosDisponiveis = [anoAtual + 1, anoAtual, anoAtual - 1, anoAtual - 2, anoAtual - 3];
     this.carregarTudo();
+  }
+
+  setAba(aba: AbaFiscal): void {
+    this.abaAtiva = aba;
+    try {
+      localStorage.setItem(CHAVE_ABA, aba);
+    } catch {
+      /* storage indisponível: só não lembra a aba */
+    }
   }
 
   onAnoChange(): void {
@@ -120,6 +145,7 @@ export class FiscalComponent implements OnInit {
       quantidade: this.form.quantidade,
       precoUnitario: this.form.precoUnitario,
       custos: this.form.custos ?? 0,
+      ...(this.form.tipo === 'venda' && this.form.irrfRetido != null ? { irrfRetido: this.form.irrfRetido } : {}),
     };
 
     this.salvando = true;
@@ -143,6 +169,7 @@ export class FiscalComponent implements OnInit {
 
   editar(op: OperacaoFiscal): void {
     this.editandoId = op.id;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     this.form = {
       data: op.data.slice(0, 10),
       ticker: op.ticker,
@@ -152,6 +179,7 @@ export class FiscalComponent implements OnInit {
       quantidade: op.quantidade,
       precoUnitario: op.precoUnitario,
       custos: op.custos,
+      irrfRetido: op.irrfRetido,
     };
   }
 
@@ -170,6 +198,23 @@ export class FiscalComponent implements OnInit {
     return this.apuracao?.meses.filter((m) => m.bucket === bucket) ?? [];
   }
 
+  /** Só meses com algo a mostrar (imposto, IRRF, saldo ou acumulado). */
+  get darfsRelevantes(): DarfMensal[] {
+    return (this.apuracao?.darfs ?? []).filter(
+      (d) => d.impostoDevido > 0 || d.irrfDoMes > 0 || d.valorAcumuladoAnterior > 0 || d.irrfSaldoFinal > 0,
+    );
+  }
+
+  aliquotaPct(bucket: BucketFiscal): number {
+    const primeiro = this.mesesDoBucket(bucket)[0];
+    return primeiro ? Math.round(primeiro.aliquota * 100) : 0;
+  }
+
+  formatarData(iso: string): string {
+    const [a, m, d] = iso.split('-');
+    return `${d}/${m}/${a}`;
+  }
+
   bucketLabel(bucket: BucketFiscal): string {
     return BUCKET_LABELS[bucket];
   }
@@ -183,5 +228,14 @@ export class FiscalComponent implements OnInit {
     if (valor > 0) return 'valor--positivo';
     if (valor < 0) return 'valor--negativo';
     return '';
+  }
+}
+
+function lerAbaSalva(): AbaFiscal {
+  try {
+    const salva = localStorage.getItem(CHAVE_ABA);
+    return ABAS.some((a) => a.id === salva) ? (salva as AbaFiscal) : 'operacoes';
+  } catch {
+    return 'operacoes';
   }
 }

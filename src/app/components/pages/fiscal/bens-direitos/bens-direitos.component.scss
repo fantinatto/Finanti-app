@@ -1,0 +1,190 @@
+$primary: #1A3C56;
+$border:  #e5e7eb;
+$radius:  12px;
+$muted:   #6b7280;
+$danger:  #ef4444;
+
+:host { display: block; }
+
+.msg-erro {
+  color: $danger;
+  font-size: 0.82rem;
+  margin: 0.5rem 0 0;
+  flex-basis: 100%;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $primary;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+// ── Corretora ─────────────────────────────────────────────────────────────
+.corretora-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  font-size: 0.85rem;
+
+  &__label { color: $muted; }
+  &__cnpj { color: $muted; font-variant-numeric: tabular-nums; }
+}
+
+.corretora-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+
+  .campo { flex: 1 1 220px; }
+}
+
+.darf-resumo__item--muted strong { color: $muted; }
+
+.legenda {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: $muted;
+  line-height: 1.5;
+}
+
+// ── Tabela ────────────────────────────────────────────────────────────────
+.bens-table-wrap {
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .05);
+  overflow-x: auto;
+}
+
+.bens-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+
+  th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: $muted;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    background: #f8fafc;
+    border-bottom: 2px solid $border;
+  }
+
+  th.col-num, td.col-num { text-align: right; }
+
+  td {
+    padding: 0.55rem 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid rgba($border, 0.7);
+    font-variant-numeric: tabular-nums;
+  }
+
+  tr.linha-aberta td { background: #f8fafc; border-bottom-color: transparent; }
+
+  .muted { color: $muted; }
+
+  .classe {
+    margin-left: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: $muted;
+  }
+
+  .sub { margin-top: 0.15rem; font-size: 0.72rem; color: $muted; }
+
+  .acoes {
+    white-space: nowrap;
+    text-align: right;
+  }
+}
+
+.valor-copiavel {
+  border: none;
+  background: none;
+  padding: 0.15rem 0.3rem;
+  border-radius: 6px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: #111;
+  cursor: copy;
+
+  &:hover { background: #eef2f7; }
+}
+
+.btn-copiar {
+  padding: 0.3rem 0.65rem;
+  border: 1.5px solid $primary;
+  border-radius: 8px;
+  background: #fff;
+  color: $primary;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 0.25rem;
+
+  &:hover { background: rgba($primary, 0.06); }
+}
+
+.badge-ok,
+.badge-pendente {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-ok { background: #dcfce7; color: #15803d; }
+.badge-pendente { background: #fef3c7; color: #92400e; }
+
+// ── Cadastro do ativo ─────────────────────────────────────────────────────
+.linha-cadastro td { background: #f8fafc; }
+
+.cadastro-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.25rem 0 0.5rem;
+
+  .campo { flex: 1 1 180px; }
+  .campo--largo { flex: 2 1 280px; }
+
+  small { font-size: 0.72rem; color: #92400e; }
+
+  &__acoes {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1rem;
+    flex-basis: 100%;
+  }
+}
+
+.discriminacao-preview {
+  flex-basis: 100%;
+  margin: 0.25rem 0 0;
+  padding: 0.6rem 0.8rem;
+  background: #fff;
+  border: 1px dashed $border;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #374151;
+  line-height: 1.5;
+}

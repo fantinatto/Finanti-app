@@ -1,0 +1,163 @@
+<div class="estado-loading" *ngIf="carregando && !dados">
+  <div class="spinner-lg"></div>
+  <span>Calculando posição em 31/12...</span>
+</div>
+
+<p class="msg-erro" *ngIf="erroCarga">{{ erroCarga }}</p>
+
+<ng-container *ngIf="dados">
+  <!-- ── Corretora ─────────────────────────────────────────────────────── -->
+  <div class="corretora-card">
+    <ng-container *ngIf="!editandoCorretora">
+      <span class="corretora-card__label">Custódia:</span>
+      <strong>{{ dados.corretoraNome }}</strong>
+      <span class="corretora-card__cnpj" *ngIf="dados.corretoraCnpj">CNPJ {{ formatarCnpj(dados.corretoraCnpj) }}</span>
+      <button type="button" class="link-btn" (click)="editandoCorretora = true">Editar</button>
+    </ng-container>
+
+    <form class="corretora-form" *ngIf="editandoCorretora" (ngSubmit)="salvarCorretora()">
+      <div class="campo">
+        <label for="corretoraNome">Corretora (custódia)</label>
+        <input id="corretoraNome" name="corretoraNome" [(ngModel)]="corretoraNome" placeholder="XP Investimentos CCTVM S/A" />
+      </div>
+      <div class="campo">
+        <label for="corretoraCnpj">CNPJ da corretora</label>
+        <input id="corretoraCnpj" name="corretoraCnpj" [(ngModel)]="corretoraCnpj" placeholder="00.000.000/0000-00" />
+      </div>
+      <button type="submit" class="btn-primario" [disabled]="salvandoCorretora">Salvar</button>
+      <button type="button" class="link-btn" *ngIf="dados.corretoraNome" (click)="editandoCorretora = false">Cancelar</button>
+      <p class="msg-erro" *ngIf="erroCorretora">{{ erroCorretora }}</p>
+    </form>
+  </div>
+
+  <!-- ── Totais ────────────────────────────────────────────────────────── -->
+  <div class="darf-resumo">
+    <div class="darf-resumo__item">
+      <span>Situação em 31/12/{{ ano - 1 }}</span>
+      <strong>{{ dados.totais.anterior | currency: 'BRL' }}</strong>
+    </div>
+    <div class="darf-resumo__item">
+      <span>Situação em 31/12/{{ ano }}</span>
+      <strong>{{ dados.totais.atual | currency: 'BRL' }}</strong>
+    </div>
+    <div class="darf-resumo__item darf-resumo__item--muted" title="Só referência — a declaração usa o custo de aquisição, nunca o valor de mercado">
+      <span>Valor de mercado (referência)</span>
+      <strong>{{ dados.totais.valorMercado | currency: 'BRL' }}</strong>
+    </div>
+  </div>
+
+  <details class="avisos-fiscais" *ngIf="dados.divergencias.length">
+    <summary>
+      ⚠️ {{ dados.divergencias.length }} {{ dados.divergencias.length === 1 ? 'ativo diverge' : 'ativos divergem' }} da carteira em
+      Investimentos — falta lançar compras antigas no livro fiscal.
+      <span class="avisos-fiscais__ver">Ver detalhes</span>
+    </summary>
+    <ul>
+      <li *ngFor="let d of dados.divergencias">
+        <strong>{{ d.ticker }}</strong>: livro fiscal {{ d.quantidadeLivro }} × carteira {{ d.quantidadeCarteira }}
+      </li>
+    </ul>
+  </details>
+
+  <p class="legenda">
+    Declare na ficha <strong>Bens e Direitos</strong> pelo <strong>custo de aquisição</strong> (quantidade × preço médio,
+    com custos), nunca pelo valor de mercado. Clique num valor para copiá-lo no formato do programa (1234,56).
+    <span *ngIf="pendentes > 0">{{ pendentes }} {{ pendentes === 1 ? 'ativo tem' : 'ativos têm' }} cadastro incompleto.</span>
+  </p>
+
+  <div class="estado-vazio" *ngIf="dados.itens.length === 0">
+    <h3>Nenhuma posição em 31/12/{{ ano - 1 }} nem em 31/12/{{ ano }}</h3>
+    <p>Lance as compras na aba Operações para montar a posição.</p>
+  </div>
+
+  <!-- ── Tabela ────────────────────────────────────────────────────────── -->
+  <div class="bens-table-wrap" *ngIf="dados.itens.length > 0">
+    <table class="bens-table">
+      <thead>
+        <tr>
+          <th>Ativo</th>
+          <th>Grupo / Código</th>
+          <th class="col-num">31/12/{{ ano - 1 }}</th>
+          <th class="col-num">31/12/{{ ano }}</th>
+          <th class="col-num">Mercado</th>
+          <th>Cadastro</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let item of dados.itens">
+          <tr [class.linha-aberta]="tickerEditando === item.ticker">
+            <td>
+              <a class="ticker-link" [href]="'https://statusinvest.com.br/' + (item.assetType === 'fii' ? 'fundos-imobiliarios' : 'acoes') + '/' + item.ticker"
+                 target="_blank" rel="noopener noreferrer" title="Abrir no Status Invest">
+                <span class="ticker-badge">{{ item.ticker }}</span>
+              </a>
+              <span class="classe">{{ nomeClasse(item) }}</span>
+              <div class="sub">{{ item.atual.quantidade }} {{ item.assetType === 'fii' ? 'cotas' : 'un.' }}</div>
+            </td>
+            <td><span [title]="item.descricaoCodigo">{{ item.grupo }} / {{ item.codigo }}</span></td>
+            <td class="col-num">
+              <button type="button" class="valor-copiavel" (click)="copiarValor(item.anterior.custoTotal, item.ticker + '-ant')" title="Copiar">
+                {{ copiado === item.ticker + '-ant' ? 'Copiado!' : (item.anterior.custoTotal | currency: 'BRL') }}
+              </button>
+            </td>
+            <td class="col-num">
+              <button type="button" class="valor-copiavel" (click)="copiarValor(item.atual.custoTotal, item.ticker + '-atu')" title="Copiar">
+                {{ copiado === item.ticker + '-atu' ? 'Copiado!' : (item.atual.custoTotal | currency: 'BRL') }}
+              </button>
+            </td>
+            <td class="col-num muted" [title]="item.cotacaoReferencia ? 'Cotação de ' + item.cotacaoReferencia.anoMes : 'Sem cotação'">
+              {{ item.valorMercado != null ? (item.valorMercado | currency: 'BRL') : '—' }}
+            </td>
+            <td>
+              <span class="badge-ok" *ngIf="item.pendencias.length === 0">Completo</span>
+              <span class="badge-pendente" *ngIf="item.pendencias.length > 0" [title]="'Falta: ' + item.pendencias.join(', ')">
+                Falta: {{ item.pendencias[0] }}{{ item.pendencias.length > 1 ? ' +' + (item.pendencias.length - 1) : '' }}
+              </span>
+            </td>
+            <td class="acoes">
+              <button type="button" class="btn-copiar" (click)="copiarTexto(item.discriminacao, item.ticker + '-disc')" title="Copiar discriminação">
+                {{ copiado === item.ticker + '-disc' ? '✓ Copiado' : '📋 Discriminação' }}
+              </button>
+              <button type="button" class="btn-icone" (click)="abrirCadastro(item)" title="Editar cadastro (CNPJ, razão social)">✎</button>
+            </td>
+          </tr>
+
+          <tr class="linha-cadastro" *ngIf="tickerEditando === item.ticker">
+            <td colspan="7">
+              <form class="cadastro-form" (ngSubmit)="salvarAtivo(item)">
+                <div class="campo">
+                  <label>{{ item.assetType === 'fii' ? 'CNPJ do fundo' : 'CNPJ da empresa' }}</label>
+                  <input name="cnpj" [(ngModel)]="formAtivo.cnpj" placeholder="00.000.000/0000-00" />
+                </div>
+                <div class="campo campo--largo">
+                  <label>{{ item.assetType === 'fii' ? 'Nome do fundo' : 'Razão social' }}</label>
+                  <input name="razaoSocial" [(ngModel)]="formAtivo.razaoSocial" />
+                  <small *ngIf="item.razaoSocialSugerida">Pré-preenchido com o nome do Status Invest — confira a razão social.</small>
+                </div>
+                <ng-container *ngIf="item.assetType === 'fii'">
+                  <div class="campo campo--largo">
+                    <label>Administrador</label>
+                    <input name="administrador" [(ngModel)]="formAtivo.administrador" />
+                  </div>
+                  <div class="campo">
+                    <label>CNPJ do administrador</label>
+                    <input name="cnpjAdministrador" [(ngModel)]="formAtivo.cnpjAdministrador" placeholder="00.000.000/0000-00" />
+                  </div>
+                </ng-container>
+                <div class="cadastro-form__acoes">
+                  <a class="link-btn" [href]="'https://statusinvest.com.br/' + (item.assetType === 'fii' ? 'fundos-imobiliarios' : 'acoes') + '/' + item.ticker"
+                     target="_blank" rel="noopener noreferrer">Consultar CNPJ no Status Invest ↗</a>
+                  <button type="button" class="link-btn" (click)="tickerEditando = null">Cancelar</button>
+                  <button type="submit" class="btn-primario" [disabled]="salvandoAtivo">Salvar</button>
+                </div>
+                <p class="msg-erro" *ngIf="erroAtivo">{{ erroAtivo }}</p>
+                <p class="discriminacao-preview"><strong>Discriminação atual:</strong> {{ item.discriminacao }}</p>
+              </form>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</ng-container>

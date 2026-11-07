@@ -35,6 +35,42 @@ $danger:   #ef4444;
 
 // ── Formulário ────────────────────────────────────────────────────────────────
 
+.fiscal-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid $border;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+}
+
+.fiscal-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $muted;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover { color: $primary; }
+  &.active { color: $primary; border-bottom-color: $primary; }
+
+  &__contador {
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: #eef2f7;
+    font-size: 0.7rem;
+    color: $primary;
+  }
+}
+
 .form-card {
   background: #fff;
   border: 1px solid $border;
@@ -370,18 +406,69 @@ $danger:   #ef4444;
   letter-spacing: 0.02em;
 }
 
+.badge-estimado,
+.badge-acumula {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.badge-estimado { background: #e0e7ff; color: #3730a3; }
+.badge-acumula { margin-left: 0; background: #fef3c7; color: #92400e; }
+
+.darf-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.6rem 0.9rem;
+    background: #f8fafc;
+    border: 1px solid $border;
+    border-radius: 8px;
+
+    span { font-size: 0.72rem; color: $muted; }
+    strong { font-size: 1rem; color: $primary; font-variant-numeric: tabular-nums; }
+  }
+}
+
+.darf-vazio {
+  margin: 0;
+  font-size: 0.82rem;
+  color: $muted;
+}
+
 .avisos-fiscais {
-  background: #fef9c3;
-  border: 1px solid #fde68a;
-  border-radius: $radius;
-  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.78rem;
+  color: #92400e;
 
-  p {
-    margin: 0;
-    font-size: 0.82rem;
-    color: #92400e;
+  summary {
+    cursor: pointer;
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+  }
+
+  &__ver {
+    margin-left: 0.25rem;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+
+  &[open] .avisos-fiscais__ver { display: none; }
+
+  ul {
+    margin: 0.5rem 0 0;
+    padding: 0.6rem 0.9rem 0.6rem 1.8rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
     line-height: 1.6;
-
-    & + p { margin-top: 0.4rem; }
   }
 }
