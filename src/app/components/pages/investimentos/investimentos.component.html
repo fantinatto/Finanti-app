@@ -238,7 +238,7 @@
           <tr *ngFor="let inv of investimentosVisiveis">
             <td class="col-tipo"><span class="tipo-badge" [ngClass]="'tipo-badge--' + inv.tipo">{{ labelTipo[inv.tipo] }}</span></td>
             <td class="col-ticker">
-              <span class="ticker-badge" *ngIf="inv.ticker">{{ inv.ticker }}</span>
+              <a class="ticker-link" *ngIf="inv.ticker" [href]="inv.ticker | statusInvestUrl:inv.tipo" target="_blank" rel="noopener noreferrer" title="Abrir no Status Invest"><span class="ticker-badge">{{ inv.ticker }}</span></a>
               <span class="sem-ticker" *ngIf="!inv.ticker">—</span>
             </td>
             <td class="col-nome">{{ inv.nome }}</td>
@@ -491,7 +491,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let inv of acoesInvestidas">
-              <td class="col-ticker"><span class="ticker-badge">{{ inv.ticker }}</span></td>
+              <td class="col-ticker"><a class="ticker-link" [href]="inv.ticker | statusInvestUrl" target="_blank" rel="noopener noreferrer" title="Abrir no Status Invest"><span class="ticker-badge">{{ inv.ticker }}</span></a></td>
               <td class="col-nome">{{ inv.nome }}</td>
               <td class="col-setor">{{ recomendacaoDe(inv.id)?.setor ?? '—' }}</td>
               <td class="col-num">
@@ -695,7 +695,7 @@
           <tbody>
             <tr *ngFor="let r of recomendacoesFii">
               <td class="col-ticker">
-                <span class="ticker-badge">{{ r.ticker }}</span>
+                <a class="ticker-link" [href]="r.ticker | statusInvestUrl:'fii'" target="_blank" rel="noopener noreferrer" title="Abrir no Status Invest"><span class="ticker-badge">{{ r.ticker }}</span></a>
                 <span class="alerta-risco-fii" *ngIf="r.alertaRisco" [title]="descricaoAlertaRisco(r.alertaRisco)">⚠</span>
               </td>
               <td class="col-nome">{{ r.nome }}</td>

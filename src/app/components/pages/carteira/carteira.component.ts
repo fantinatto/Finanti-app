@@ -54,7 +54,13 @@ export class CarteiraComponent implements OnInit {
   regraSelecionada: RegraSelecionada | null = null;
   baseRegraCustom: number | null = null;
   baseCustomInput: number | null = null;
+  /** Chip "Manual" ativo: alocação livre ou base customizada (só aí o campo "Base customizada" aparece). */
+  modoManual = false;
   ajustarPorJuros = false;
+  /** Taxa do DI futuro (% a.a.) digitada pelo usuário — null = usa taxaDiPadrao do backend. */
+  taxaDi: number | null = null;
+  taxaDiPadrao: number | null = null;
+  contratoDi = 'DI1F35';
   tipoRankingRecomendacao: TipoRankingRecomendacao = 'setor';
   permiteFracionario = true;
 
@@ -83,8 +89,11 @@ export class CarteiraComponent implements OnInit {
       config: this.portfolioService.getConfig(),
       meses: this.marketData.getMeses(),
       segmentosFii: this.marketData.getSegmentosFii(),
+      regras: this.portfolioService.getRegrasBases(),
     }).subscribe({
-      next: ({ perfil, config, meses, segmentosFii }) => {
+      next: ({ perfil, config, meses, segmentosFii, regras }) => {
+        this.contratoDi = regras.contratoDi;
+        this.taxaDiPadrao = regras.taxaDiPadrao;
         this.temDataNascimento = !!perfil.birthDate;
         this.idade = perfil.birthDate ? this.calcularIdade(perfil.birthDate) : null;
 
@@ -118,8 +127,15 @@ export class CarteiraComponent implements OnInit {
     this.percentualAcoes = config.percentualAcoes;
     this.percentualEstouro = config.percentualEstouro;
     this.regraSelecionada = config.regraSelecionada;
-    this.baseRegraCustom = config.baseRegraCustom;
+    // Configs antigas podem ter 'base100' etc. sem baseRegraCustom gravado — deriva do nome.
+    this.baseRegraCustom = config.baseRegraCustom ?? this.baseDaRegra(config.regraSelecionada);
     this.ajustarPorJuros = config.regraSelecionada === 'base_di';
+    this.modoManual =
+      config.regraSelecionada === null ||
+      config.regraSelecionada === 'base_custom' ||
+      (config.regraSelecionada === 'base_di' && !this.ehBasePadrao(this.baseRegraCustom));
+    if (this.modoManual) this.baseCustomInput = this.baseRegraCustom;
+    this.taxaDi = config.taxaDi ?? null;
     this.tipoRankingRecomendacao = config.tipoRankingRecomendacao ?? 'setor';
     this.permiteFracionario = config.permiteFracionario ?? true;
   }
@@ -141,16 +157,19 @@ export class CarteiraComponent implements OnInit {
     this.erroSugestao = '';
     this.sugestaoInfo = '';
 
-    const request = this.ajustarPorJuros ? this.portfolioService.getSugestaoDi(base) : this.portfolioService.getSugestaoBase(base);
+    const request = this.ajustarPorJuros ? this.portfolioService.getSugestaoDi(base, this.taxaDi) : this.portfolioService.getSugestaoBase(base);
 
     request.subscribe({
       next: (sugestao) => {
         this.percentualRendaFixa = Math.round((100 - sugestao.percentualSugerido) * 10) / 10;
-        this.regraSelecionada = this.ajustarPorJuros ? 'base_di' : (BASES_PADRAO as readonly number[]).includes(base) ? (`base${base}` as RegraSelecionada) : 'base_custom';
+        // 'base_di' guarda a base (padrão OU customizada) em baseRegraCustom — é isso que permite
+        // combinar "Regra dos 100" + DI: o chip continua aceso via chipAtivo(), não pelo nome da regra.
+        this.regraSelecionada = this.ajustarPorJuros ? 'base_di' : this.ehBasePadrao(base) ? (`base${base}` as RegraSelecionada) : 'base_custom';
         this.baseRegraCustom = base;
-        this.sugestaoInfo = this.ajustarPorJuros && sugestao.contratoDi
-          ? `Sugestão: ${sugestao.percentualSugerido.toFixed(1)}% em renda variável (idade ${sugestao.idade}, DI ${sugestao.contratoDi} a ${sugestao.taxaDi?.toFixed(2)}% a.a.)`
-          : `Sugestão: ${sugestao.percentualSugerido.toFixed(1)}% em renda variável (idade ${sugestao.idade}, base ${base})`;
+        const nomeBase = this.modoManual ? `Base ${base}` : `Regra dos ${base}`;
+        const ajusteDi = this.ajustarPorJuros && sugestao.contratoDi ? ` + ${sugestao.contratoDi} a ${sugestao.taxaDi?.toFixed(2)}% a.a.` : '';
+        const rv = sugestao.percentualSugerido.toFixed(1);
+        this.sugestaoInfo = `Aplicado: ${nomeBase}${ajusteDi} (idade ${sugestao.idade}) → Renda Variável ${rv}% / Renda Fixa ${this.percentualRendaFixa}%. Clique em Salvar pra gravar.`;
         this.aplicandoSugestao = false;
       },
       error: (err) => {
@@ -165,11 +184,42 @@ export class CarteiraComponent implements OnInit {
     if (this.baseCustomInput != null) this.aplicarRegra(this.baseCustomInput);
   }
 
+  selecionarRegraPadrao(base: number): void {
+    this.modoManual = false;
+    this.aplicarRegra(base);
+  }
+
+  /** Chip aceso pela BASE em uso, com ou sem ajuste por DI ('base100' ou 'base_di' + base 100). */
+  chipAtivo(base: number): boolean {
+    return !this.modoManual && this.regraSelecionada !== null && this.baseRegraCustom === base;
+  }
+
+  private ehBasePadrao(base: number | null): boolean {
+    return base != null && (BASES_PADRAO as readonly number[]).includes(base);
+  }
+
+  private baseDaRegra(regra: RegraSelecionada | null): number | null {
+    const match = regra?.match(/^base(\d+)$/);
+    return match ? Number(match[1]) : null;
+  }
+
   onToggleJuros(): void {
-    if (this.baseRegraCustom != null) this.aplicarRegra(this.baseRegraCustom);
+    if (this.baseRegraCustom != null) {
+      this.aplicarRegra(this.baseRegraCustom);
+    } else if (this.ajustarPorJuros) {
+      this.sugestaoInfo = 'Escolha uma regra (80/100/110/120) ou uma base customizada no Manual pra combinar com o ajuste por juros.';
+    } else {
+      this.sugestaoInfo = '';
+    }
+  }
+
+  /** Recalcula a sugestão na hora com a taxa nova, se a regra ajustada por juros estiver ativa. */
+  onTaxaDiChange(): void {
+    if (this.ajustarPorJuros && this.baseRegraCustom != null) this.aplicarRegra(this.baseRegraCustom);
   }
 
   usarManual(): void {
+    this.modoManual = true;
     this.regraSelecionada = null;
     this.baseRegraCustom = null;
     this.sugestaoInfo = '';
@@ -216,6 +266,7 @@ export class CarteiraComponent implements OnInit {
       percentualEstouro: this.percentualEstouro,
       regraSelecionada: this.regraSelecionada ?? undefined,
       baseRegraCustom: this.baseRegraCustom ?? undefined,
+      taxaDi: this.taxaDi ?? undefined,
       tipoRankingRecomendacao: this.tipoRankingRecomendacao,
       permiteFracionario: this.permiteFracionario,
       alocacoesSetor: this.alocacoesSetor,

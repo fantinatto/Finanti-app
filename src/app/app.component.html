@@ -103,7 +103,7 @@
   <button class="btn-signout--mobile" (click)="logout()">Sair</button>
 </nav>
 
-<main class="app-main">
+<main class="app-main" [class.app-main--com-header]="(authService.authState$ | async)?.isAuthenticated">
   <router-outlet></router-outlet>
 </main>
 

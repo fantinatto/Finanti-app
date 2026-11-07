@@ -29,21 +29,27 @@
           type="button"
           class="chip"
           *ngFor="let base of basesPadrao"
-          [class.active]="regraSelecionada === ('base' + base)"
+          [class.active]="chipAtivo(base)"
           [disabled]="!temDataNascimento || aplicandoSugestao"
-          (click)="aplicarRegra(base)"
+          (click)="selecionarRegraPadrao(base)"
         >Regra dos {{ base }}</button>
 
-        <button type="button" class="chip" [class.active]="regraSelecionada === null" (click)="usarManual()">Manual</button>
+        <button type="button" class="chip" [class.active]="modoManual" (click)="usarManual()">Manual</button>
       </div>
 
       <div class="regra-custom">
         <label class="toggle-juros">
           <input type="checkbox" [(ngModel)]="ajustarPorJuros" name="ajustarPorJuros" (ngModelChange)="onToggleJuros()" />
-          Ajustar pela taxa de juros (DI1F35) — quanto maior o juro, menos renda variável
+          Ajustar pela taxa de juros ({{ contratoDi }}) — quanto maior o juro, menos renda variável
         </label>
 
         <div class="base-custom-row">
+          <label for="taxaDi">Taxa {{ contratoDi }} (% a.a.)</label>
+          <input id="taxaDi" type="number" min="0" max="100" step="0.01" [(ngModel)]="taxaDi" name="taxaDi" [placeholder]="taxaDiPadrao != null ? taxaDiPadrao : ''" (change)="onTaxaDiChange()" />
+          <span class="campo-legenda">Informada manualmente. Em branco = padrão{{ taxaDiPadrao != null ? ' (' + taxaDiPadrao + '%)' : '' }}.</span>
+        </div>
+
+        <div class="base-custom-row" *ngIf="modoManual">
           <label for="baseCustom">Base customizada</label>
           <input id="baseCustom" type="number" min="0" max="200" [(ngModel)]="baseCustomInput" name="baseCustom" placeholder="ex: 90" />
           <button type="button" class="btn-secundario" [disabled]="!temDataNascimento || baseCustomInput === null || aplicandoSugestao" (click)="aplicarBaseCustom()">Aplicar</button>

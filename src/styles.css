@@ -199,3 +199,13 @@ button, a {
 
 
 
+
+/* Ticker clicável → página do ativo no Status Invest (pipe statusInvestUrl). Mantém o visual
+   do .ticker-badge de cada tela; só tira o sublinhado e sinaliza o hover. */
+.ticker-link {
+  text-decoration: none;
+}
+.ticker-link:hover .ticker-badge {
+  text-decoration: underline;
+  filter: brightness(0.92);
+}

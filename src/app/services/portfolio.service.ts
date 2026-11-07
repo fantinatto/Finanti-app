@@ -13,6 +13,7 @@ import {
   PortfolioConfig,
   RecomendacaoHolding,
   RecomendacaoHoldingFii,
+  RegrasBases,
   ResultadoSimulacaoRendaFixa,
   ResumoDiversificacao,
   SaudeCarteira,
@@ -37,8 +38,15 @@ export class PortfolioService {
     return this.http.get<SugestaoRegra>('/portfolio/regras/sugestao', { params: { base } });
   }
 
-  getSugestaoDi(base: number): Observable<SugestaoRegra> {
-    return this.http.get<SugestaoRegra>('/portfolio/regras/sugestao-di', { params: { base } });
+  /** taxaDi = valor digitado na tela (pode ainda não estar salvo); ausente = backend usa o salvo ou o padrão. */
+  getSugestaoDi(base: number, taxaDi?: number | null): Observable<SugestaoRegra> {
+    const params: Record<string, number> = { base };
+    if (taxaDi != null) params['taxaDi'] = taxaDi;
+    return this.http.get<SugestaoRegra>('/portfolio/regras/sugestao-di', { params });
+  }
+
+  getRegrasBases(): Observable<RegrasBases> {
+    return this.http.get<RegrasBases>('/portfolio/regras/bases');
   }
 
   listarInvestimentos(): Observable<Investimento[]> {

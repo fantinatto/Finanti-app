@@ -159,7 +159,7 @@
             <span class="posicao" [class.posicao--top]="i < 3">{{ i + 1 }}</span>
           </td>
           <td class="col-fixed col-ticker">
-            <span class="ticker-badge">{{ item.ticker }}</span>
+            <a class="ticker-link" [href]="item.ticker | statusInvestUrl" target="_blank" rel="noopener noreferrer" title="Abrir no Status Invest"><span class="ticker-badge">{{ item.ticker }}</span></a>
             <span
               class="fallback-badge"
               *ngIf="item.origemScore === 'setor_fallback'"
@@ -275,7 +275,7 @@
         <tbody>
           <tr *ngFor="let item of itensFii">
             <td class="col-fixed col-ticker">
-              <span class="ticker-badge">{{ item.ticker }}</span>
+              <a class="ticker-link" [href]="item.ticker | statusInvestUrl:'fii'" target="_blank" rel="noopener noreferrer" title="Abrir no Status Invest"><span class="ticker-badge">{{ item.ticker }}</span></a>
               <span class="alerta-risco-fii" *ngIf="item.alertaRisco" [title]="descricaoAlertaRisco(item.alertaRisco)">⚠</span>
             </td>
             <td class="col-fixed col-nome" [title]="item.nome">{{ truncarNomeFii(item.nome) }}</td>

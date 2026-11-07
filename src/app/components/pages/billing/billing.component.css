@@ -363,7 +363,6 @@
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
-  .billing-page { margin-top: 80px; }
   .modules-grid { grid-template-columns: 1fr; }
   .subscription-card { flex-direction: column; align-items: flex-start; }
 }

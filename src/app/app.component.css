@@ -139,6 +139,13 @@
   /* Sem padding - os componentes gerenciam seu próprio espaçamento */
 }
 
+/* O header é position: fixed (sai do fluxo) — sem esse recuo o topo de toda página logada
+   (título, subtítulo, navegação de mês etc.) ficava escondido atrás dele. Só quando o header
+   é renderizado (usuário autenticado); login/signup não têm header. */
+.app-main--com-header {
+  padding-top: 70px;
+}
+
 /* ===== Indicadores Fundamentalistas (dropdown na nav) ===== */
 .indicadores-menu-container {
   position: relative;
@@ -627,6 +634,9 @@
     padding: 0 1rem;
     height: 60px;
     grid-template-columns: 1fr auto;
+  }
+  .app-main--com-header {
+    padding-top: 60px;
   }
   .app-header .nav {
     display: none;

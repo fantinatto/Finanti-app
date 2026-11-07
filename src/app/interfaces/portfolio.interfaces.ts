@@ -19,6 +19,8 @@ export interface PortfolioConfig {
   percentualEstouro: number;
   regraSelecionada: RegraSelecionada | null;
   baseRegraCustom: number | null;
+  /** Taxa do DI1F35 (% a.a.) informada manualmente — null = padrão do backend (RegrasBases.taxaDiPadrao). */
+  taxaDi: number | null;
   tipoRankingRecomendacao: TipoRankingRecomendacao;
   /** false = recomendações e execuções na Simulação só operam em múltiplos de 100 ações (lote-padrão B3). */
   permiteFracionario: boolean;
@@ -35,6 +37,7 @@ export interface UpsertPortfolioConfigPayload {
   percentualEstouro: number;
   regraSelecionada?: RegraSelecionada;
   baseRegraCustom?: number;
+  taxaDi?: number;
   tipoRankingRecomendacao?: TipoRankingRecomendacao;
   permiteFracionario?: boolean;
   alocacoesSetor: AlocacaoItem[];
@@ -47,6 +50,13 @@ export interface SugestaoRegra {
   percentualSugerido: number;
   contratoDi?: string;
   taxaDi?: number;
+}
+
+export interface RegrasBases {
+  bases: number[];
+  contratoDi: string;
+  /** Taxa usada quando o usuário não informou a sua (PortfolioConfig.taxaDi null). */
+  taxaDiPadrao: number;
 }
 
 export type TipoInvestimento = 'acao' | 'fii' | 'renda_fixa';
